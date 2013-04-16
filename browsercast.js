@@ -49,7 +49,7 @@ function toggleVisible(elems, commonClass, toShow) {
   elems.find("." + toShow).show();
 }
 
-function BrowserCastMode() {
+function BaseBrowserCastMode() {
   var self = {};
   self.keyboardShortcuts = {};
 
@@ -80,7 +80,7 @@ function BrowserCastMode() {
 }
 
 function BrowserCastRecording() {
-  var self = BrowserCastMode();
+  var self = BaseBrowserCastMode();
 
   self.keyboardShortcuts = {
     m: {
@@ -328,7 +328,7 @@ function BrowserCastRecording() {
 }
 
 function BrowserCastPlayback() {
-  var self = BrowserCastMode();
+  var self = BaseBrowserCastMode();
 
   self._activate = function(browsercast) {
     self.audio = self.browsercast.audio;
@@ -354,10 +354,12 @@ function BrowserCastPlayback() {
       self.toggleCellClass(options.cellDom, null);
     },
     start: function(event, options){
+      log("showing", options.cellIndex, "at", self.browsercast.getCurrentTime());
       self.toggleCellClass(options.cellDom, "active");
       IPython.notebook.select(options.cellIndex);
     },
     end: function(event, options){
+      log("hiding", options.cellIndex, "at", self.browsercast.getCurrentTime());
       self.toggleCellClass(options.cellDom, "inactive");
       IPython.notebook.select(Math.max(options.cellIndex - 1, 0));
     },
@@ -368,12 +370,14 @@ function BrowserCastPlayback() {
 
   self.setupPopcornEvents = function() {
     Popcorn.plugin("browsercastCell", self.popcornPlugin);
+    log("setup popcorn plugin...");
     var cells = IPython.notebook.get_cells();
     var cellElements = IPython.notebook.get_cell_elements();
     var curMark = { time: 0 };
     var end = self.audio.duration() + 1;
     cells.forEach(function(cell, index) {
       curMark = cell.metadata.browsercast || curMark;
+      log("Mark: start", curMark.time, "end", end, "index", index);
       self.audio.browsercastCell({
         start: curMark.time,
         end: end,
@@ -386,6 +390,7 @@ function BrowserCastPlayback() {
   self.teardownPopcornEvents = function() {
     Popcorn.removePlugin(self.audio, "browsercastCell");
     Popcorn.removePlugin("browsercastCell");
+    log("removed popcorn plugin");
   };
 
   return self;
