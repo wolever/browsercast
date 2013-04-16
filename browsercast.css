@@ -1,4 +1,4 @@
-.nblecture-container {
+.browsercast-container {
   position: fixed;
   left: 0;
   bottom: 0;
@@ -7,57 +7,57 @@
   /* No idea why I need to fixup these jQuery UI styles... */
 
 }
-.nblecture-container > * {
+.browsercast-container > * {
   vertical-align: top;
   height: 30px;
   display: inline-block;
   margin-right: 5px;
 }
-.nblecture-container > .ui-buttonset {
+.browsercast-container > .ui-buttonset {
   margin-right: 8px;
 }
-.nblecture-container > .ui-buttonset > * {
+.browsercast-container > .ui-buttonset > * {
   height: 28px;
 }
-.nblecture-container .ui-button-text {
+.browsercast-container .ui-button-text {
   padding-top: 7px;
   padding-right: 12px;
 }
-.nblecture-container .ui-button-text-icon-primary .ui-button-text {
+.browsercast-container .ui-button-text-icon-primary .ui-button-text {
   margin-left: 16px;
   padding-top: 6px;
 }
-.nblecture-container .audio-container > * {
+.browsercast-container .audio-container > * {
   display: none;
 }
-.nblecture-container .audio-container > .state {
+.browsercast-container .audio-container > .state {
   display: inline;
 }
-.nblecture-pick-audio-url input {
+.browsercast-pick-audio-url input {
   width: 100%;
 }
-.code_cell .nblecture-controls {
+.code_cell .browsercast-controls {
   margin-left: 5px;
 }
-.nblecture-controls {
+.browsercast-controls {
   margin-bottom: 5px;
 }
-.nblecture-controls .input-container {
+.browsercast-controls .input-container {
   position: relative;
   display: inline-block;
 }
-.nblecture-controls .ui-icon {
+.browsercast-controls .ui-icon {
   position: absolute;
   top: 5px;
   left: 2px;
 }
-.nblecture-controls input {
+.browsercast-controls input {
   padding-left: 16px;
   width: 59px;
 }
-.nblecture-cell-hidden {
+.browsercast-cell-hidden {
   display: none;
 }
-.nblecture-cell-inactive {
+.browsercast-cell-inactive {
   opacity: 0.5;
 }

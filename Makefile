@@ -1,6 +1,6 @@
-all: nblecture.css
+all: browsercast.css
 
-nblecture.css: nblecture.less
+browsercast.css: browsercast.less
 	lessc $^ $@
 
 serve:
