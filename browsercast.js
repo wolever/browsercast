@@ -49,12 +49,12 @@ function toggleVisible(elems, commonClass, toShow) {
   elems.find("." + toShow).show();
 }
 
-function LectureMode() {
+function BrowserCastMode() {
   var self = {};
   self.keyboardShortcuts = {};
 
-  self.activate = function(lecture) {
-    self.lecture = lecture;
+  self.activate = function(browsercast) {
+    self.browsercast = browsercast;
     self._activate();
   };
 
@@ -62,7 +62,7 @@ function LectureMode() {
 
   self.deactivate = function() {
     self._deactivate();
-    self.lecture = null;
+    self.browsercast = null;
   }
 
   self._deactivate = function() {};
@@ -79,8 +79,8 @@ function LectureMode() {
   return self;
 }
 
-function LectureRecording() {
-  var self = LectureMode();
+function BrowserCastRecording() {
+  var self = BrowserCastMode();
 
   self.keyboardShortcuts = {
     m: {
@@ -106,7 +106,7 @@ function LectureRecording() {
       text: "Pick audio URL",
     });
     self.pickAudioBtn.click(self.pickAudioURL);
-    self.lecture.audioContainer.after(self.pickAudioBtn);
+    self.browsercast.audioContainer.after(self.pickAudioBtn);
 
     // Setup the cell timings
     if (self._didLoadFromNotebook) {
@@ -205,11 +205,11 @@ function LectureRecording() {
         "<input type='text' name='audio-url' />" +
       "</div>"
     );
-    dialog.find("[name=audio-url]").val(self.lecture.audioURL || "");
+    dialog.find("[name=audio-url]").val(self.browsercast.audioURL || "");
     dialog.dialog({
       buttons: {
         Save: function() {
-          self.lecture.setAudioURL($(this).find("[name=audio-url]").val());
+          self.browsercast.setAudioURL($(this).find("[name=audio-url]").val());
           IPython.notebook.save_notebook();
           $(this).dialog("close");
         },
@@ -259,7 +259,7 @@ function LectureRecording() {
       // after this cell's time has been saved.
       curOffset = curTime - metaTime;
       if (curOffset != 0) {
-        self.lecture.showLog(
+        self.browsercast.showLog(
           "Adjusting time from " + timeToStr(metaTime) + " " +
           "to " + timeToStr(curTime) + "."
         );
@@ -312,7 +312,7 @@ function LectureRecording() {
   self.markSelection = function() {
     var cell = IPython.notebook.get_selected_cell();
     var cellOpts = self.cellOpts(cell);
-    var time = self.lecture.getCurrentTime()
+    var time = self.browsercast.getCurrentTime()
     var timeStr = timeToStr(time);
     cellOpts.timeInput.val(timeStr);
     self.recalculateTimings();
@@ -327,11 +327,11 @@ function LectureRecording() {
   return self;
 }
 
-function LecturePlayback() {
-  var self = LectureMode();
+function BrowserCastPlayback() {
+  var self = BrowserCastMode();
 
-  self._activate = function(lecture) {
-    self.audio = self.lecture.audio;
+  self._activate = function(browsercast) {
+    self.audio = self.browsercast.audio;
     self.setupPopcornEvents();
   };
 
@@ -391,13 +391,13 @@ function LecturePlayback() {
   return self;
 }
 
-function Lecture() {
+function BrowserCast() {
   var self = {};
   self = $.extend(self, {
     events: $(self),
     modes: {
-      recording: LectureRecording(),
-      playback: LecturePlayback(),
+      recording: BrowserCastRecording(),
+      playback: BrowserCastPlayback(),
     }
   });
 
@@ -491,7 +491,7 @@ function Lecture() {
 
     $(document).keydown(function (event) {
       if (event.which === 76 && event.ctrlKey && !self._keyboard_active) {
-        // ctrl-l to begin lecture-mode commands
+        // ctrl-l to begin browsercast-mode commands
         self._keyboard_active = true;
         return false;
       } else if (self._keyboard_active) {
@@ -535,18 +535,18 @@ function Lecture() {
   };
 
   self.saveToNotebook = function() {
-    var lecture = {};
+    var browsercast = {};
     ["audioURL"].forEach(function(key) {
-      lecture[key] = self[key];
+      browsercast[key] = self[key];
     });
-    IPython.notebook.metadata.lecture = lecture;
+    IPython.notebook.metadata.browsercast = browsercast;
   };
 
   self.loadFromNotebook = function() {
     if (self._didLoadFromNotebook)
       return;
-    var lecture = IPython.notebook.metadata.lecture || {};
-    self.setAudioURL(lecture.audioURL);
+    var browsercast = IPython.notebook.metadata.browsercast || {};
+    self.setAudioURL(browsercast.audioURL);
     self.activeMode.loadFromNotebook();
     self._didLoadFromNotebook = true;
   };
@@ -602,7 +602,7 @@ function Lecture() {
       "</div>"
     );
     dialog.dialog({
-      title: "Lecture Mode Keyboard Shortcuts"
+      title: "BrowserCast Mode Keyboard Shortcuts"
     });
   };
 
@@ -650,5 +650,5 @@ function Lecture() {
   return self;
 };
 
-var lecture = Lecture();
-lecture.setup();
+var browsercast = BrowserCast();
+browsercast.setup();
