@@ -24,8 +24,8 @@ echo "
     </p>
     <p>Source code:
         <ul>
-            <li><a href='https://github.com/wolever/nblecture'>https://github.com/wolever/nblecture</a></li>
-            <li><tt>git clone https://github.com/wolever/nblecture</tt></li>
+            <li><a href='https://github.com/wolever/browsercast'>https://github.com/wolever/browsercast</a></li>
+            <li><tt>git clone https://github.com/wolever/browsercast</tt></li>
         </ul>
     </p>
 "

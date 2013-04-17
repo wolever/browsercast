@@ -49,12 +49,12 @@ function toggleVisible(elems, commonClass, toShow) {
   elems.find("." + toShow).show();
 }
 
-function LectureMode() {
+function BaseBrowserCastMode() {
   var self = {};
   self.keyboardShortcuts = {};
 
-  self.activate = function(lecture) {
-    self.lecture = lecture;
+  self.activate = function(browsercast) {
+    self.browsercast = browsercast;
     self._activate();
   };
 
@@ -62,7 +62,7 @@ function LectureMode() {
 
   self.deactivate = function() {
     self._deactivate();
-    self.lecture = null;
+    self.browsercast = null;
   }
 
   self._deactivate = function() {};
@@ -79,8 +79,8 @@ function LectureMode() {
   return self;
 }
 
-function LectureRecording() {
-  var self = LectureMode();
+function BrowserCastRecording() {
+  var self = BaseBrowserCastMode();
 
   self.keyboardShortcuts = {
     m: {
@@ -106,7 +106,7 @@ function LectureRecording() {
       text: "Pick audio URL",
     });
     self.pickAudioBtn.click(self.pickAudioURL);
-    self.lecture.audioContainer.after(self.pickAudioBtn);
+    self.browsercast.audioContainer.after(self.pickAudioBtn);
 
     // Setup the cell timings
     if (self._didLoadFromNotebook) {
@@ -125,14 +125,14 @@ function LectureRecording() {
   };
 
   self.cellOpts = function(cell) {
-    if (!cell._nblecture) {
-      if (!cell.metadata.nblecture)
-        cell.metadata.nblecture = {};
-      cell._nblecture = {
-        meta: cell.metadata.nblecture
+    if (!cell._browsercast) {
+      if (!cell.metadata.browsercast)
+        cell.metadata.browsercast = {};
+      cell._browsercast = {
+        meta: cell.metadata.browsercast
       };
     }
-    return cell._nblecture;
+    return cell._browsercast;
   };
 
   self.onSelectCell = function() {
@@ -170,21 +170,21 @@ function LectureRecording() {
     if (cellOpts.controls)
       return;
     cellOpts.controls = self.createCellControls();
-    cellOpts.timeInput = cellOpts.controls.find(".nblecture-start-time-input");
-    cellOpts.durationInput = cellOpts.controls.find(".nblecture-duration-input");
+    cellOpts.timeInput = cellOpts.controls.find(".browsercast-start-time-input");
+    cellOpts.durationInput = cellOpts.controls.find(".browsercast-duration-input");
     $(cell.element).prepend(cellOpts.controls);
   };
 
   self.createCellControls = function() {
     var controls = $(
-      "<div class='nblecture-controls'>" +
+      "<div class='browsercast-controls'>" +
         "<div class='input-container'>" +
           "<span class='ui-icon ui-icon-arrowstop-1-n'></span>" +
-          "<input class='nblecture-start-time-input' placeholder='Start' title='Cell start time' />" +
+          "<input class='browsercast-start-time-input' placeholder='Start' title='Cell start time' />" +
         "</div>" +
         "<div class='input-container'>" +
           "<span class='ui-icon ui-icon-arrowstop-1-e'></span>" +
-          "<input class='nblecture-duration-input' placeholder='Duration' title='Cell duration'/>" +
+          "<input class='browsercast-duration-input' placeholder='Duration' title='Cell duration'/>" +
         "</div>" +
       "</div>"
     );
@@ -200,16 +200,16 @@ function LectureRecording() {
 
   self.pickAudioURL = function() {
     var dialog = $(
-      "<div class='nblecture-pick-audio-url'>" +
+      "<div class='browsercast-pick-audio-url'>" +
         "<p>Enter a URL to use for audio:</p>" +
         "<input type='text' name='audio-url' />" +
       "</div>"
     );
-    dialog.find("[name=audio-url]").val(self.lecture.audioURL || "");
+    dialog.find("[name=audio-url]").val(self.browsercast.audioURL || "");
     dialog.dialog({
       buttons: {
         Save: function() {
-          self.lecture.setAudioURL($(this).find("[name=audio-url]").val());
+          self.browsercast.setAudioURL($(this).find("[name=audio-url]").val());
           IPython.notebook.save_notebook();
           $(this).dialog("close");
         },
@@ -259,7 +259,7 @@ function LectureRecording() {
       // after this cell's time has been saved.
       curOffset = curTime - metaTime;
       if (curOffset != 0) {
-        self.lecture.showLog(
+        self.browsercast.showLog(
           "Adjusting time from " + timeToStr(metaTime) + " " +
           "to " + timeToStr(curTime) + "."
         );
@@ -312,7 +312,7 @@ function LectureRecording() {
   self.markSelection = function() {
     var cell = IPython.notebook.get_selected_cell();
     var cellOpts = self.cellOpts(cell);
-    var time = self.lecture.getCurrentTime()
+    var time = self.browsercast.getCurrentTime()
     var timeStr = timeToStr(time);
     cellOpts.timeInput.val(timeStr);
     self.recalculateTimings();
@@ -327,11 +327,11 @@ function LectureRecording() {
   return self;
 }
 
-function LecturePlayback() {
-  var self = LectureMode();
+function BrowserCastPlayback() {
+  var self = BaseBrowserCastMode();
 
-  self._activate = function(lecture) {
-    self.audio = self.lecture.audio;
+  self._activate = function(browsercast) {
+    self.audio = self.browsercast.audio;
     self.setupPopcornEvents();
   };
 
@@ -340,7 +340,7 @@ function LecturePlayback() {
     self.audio = null;
   };
 
-  self.cellClassPrefix = "nblecture-cell-";
+  self.cellClassPrefix = "browsercast-cell-";
   self.toggleCellClass = function(cellDom, newClassSuffix) {
     var newClass = newClassSuffix? self.cellClassPrefix + newClassSuffix : "";
     toggleClassPrefix(cellDom, self.cellClassPrefix, newClass);
@@ -354,27 +354,31 @@ function LecturePlayback() {
       self.toggleCellClass(options.cellDom, null);
     },
     start: function(event, options){
+      log("showing", options.cellIndex, "at", self.browsercast.getCurrentTime());
       self.toggleCellClass(options.cellDom, "active");
       IPython.notebook.select(options.cellIndex);
     },
     end: function(event, options){
+      log("hiding", options.cellIndex, "at", self.browsercast.getCurrentTime());
       self.toggleCellClass(options.cellDom, "inactive");
       IPython.notebook.select(Math.max(options.cellIndex - 1, 0));
     },
     toString: function(options){
-      return "[nblectureCell start=" + options.start + "]";
+      return "[browsercastCell start=" + options.start + "]";
     }
   };
 
   self.setupPopcornEvents = function() {
-    Popcorn.plugin("nblectureCell", self.popcornPlugin);
+    Popcorn.plugin("browsercastCell", self.popcornPlugin);
+    log("setup popcorn plugin...");
     var cells = IPython.notebook.get_cells();
     var cellElements = IPython.notebook.get_cell_elements();
     var curMark = { time: 0 };
     var end = self.audio.duration() + 1;
     cells.forEach(function(cell, index) {
-      curMark = cell.metadata.nblecture || curMark;
-      self.audio.nblectureCell({
+      curMark = cell.metadata.browsercast || curMark;
+      log("Mark: start", curMark.time, "end", end, "index", index);
+      self.audio.browsercastCell({
         start: curMark.time,
         end: end,
         cellDom: $(cellElements[index]),
@@ -384,20 +388,21 @@ function LecturePlayback() {
   };
 
   self.teardownPopcornEvents = function() {
-    Popcorn.removePlugin(self.audio, "nblectureCell");
-    Popcorn.removePlugin("nblectureCell");
+    Popcorn.removePlugin(self.audio, "browsercastCell");
+    Popcorn.removePlugin("browsercastCell");
+    log("removed popcorn plugin");
   };
 
   return self;
 }
 
-function Lecture() {
+function BrowserCast() {
   var self = {};
   self = $.extend(self, {
     events: $(self),
     modes: {
-      recording: LectureRecording(),
-      playback: LecturePlayback(),
+      recording: BrowserCastRecording(),
+      playback: BrowserCastPlayback(),
     }
   });
 
@@ -454,12 +459,12 @@ function Lecture() {
 
   self.injectHTML = function() {
     self.view = $(
-      "<div class='nblecture-container'>" +
+      "<div class='browsercast-container'>" +
         "<div class='mode-select'>" +
-          "<input type='radio' id='nblecture-mode-record' name='mode' value='recording' checked />" +
-          "<label for='nblecture-mode-record'>Recording</label>" +
-          "<input type='radio' id='nblecture-mode-playback' name='mode' value='playback' />" +
-          "<label for='nblecture-mode-playback'>Playback</label>" +
+          "<input type='radio' id='browsercast-mode-record' name='mode' value='recording' checked />" +
+          "<label for='browsercast-mode-record'>Recording</label>" +
+          "<input type='radio' id='browsercast-mode-playback' name='mode' value='playback' />" +
+          "<label for='browsercast-mode-playback'>Playback</label>" +
         "</div>" +
         "<div class='audio-container'>" + 
           "<span class='state state-empty'>No audio loaded&hellip;</span>" +
@@ -472,7 +477,7 @@ function Lecture() {
     $("body").append(self.view);
     self.view.find(".mode-select").buttonset();
     self.audioContainer = self.view.find(".audio-container");
-    self.audioContainer.attr("id", "nblecture-audio-container")
+    self.audioContainer.attr("id", "browsercast-audio-container")
     self.setAudioURL();
     self.log = self.view.find(".log");
   };
@@ -491,7 +496,7 @@ function Lecture() {
 
     $(document).keydown(function (event) {
       if (event.which === 76 && event.ctrlKey && !self._keyboard_active) {
-        // ctrl-l to begin lecture-mode commands
+        // ctrl-l to begin browsercast-mode commands
         self._keyboard_active = true;
         return false;
       } else if (self._keyboard_active) {
@@ -535,18 +540,18 @@ function Lecture() {
   };
 
   self.saveToNotebook = function() {
-    var lecture = {};
+    var browsercast = {};
     ["audioURL"].forEach(function(key) {
-      lecture[key] = self[key];
+      browsercast[key] = self[key];
     });
-    IPython.notebook.metadata.lecture = lecture;
+    IPython.notebook.metadata.browsercast = browsercast;
   };
 
   self.loadFromNotebook = function() {
     if (self._didLoadFromNotebook)
       return;
-    var lecture = IPython.notebook.metadata.lecture || {};
-    self.setAudioURL(lecture.audioURL);
+    var browsercast = IPython.notebook.metadata.browsercast || {};
+    self.setAudioURL(browsercast.audioURL);
     self.activeMode.loadFromNotebook();
     self._didLoadFromNotebook = true;
   };
@@ -597,12 +602,12 @@ function Lecture() {
       }
     }
     var dialog = $(
-      "<div class='nblecture-shortcut-help'>" +
+      "<div class='browsercast-shortcut-help'>" +
         shortcutsHTML.join("\n") +
       "</div>"
     );
     dialog.dialog({
-      title: "Lecture Mode Keyboard Shortcuts"
+      title: "BrowserCast Mode Keyboard Shortcuts"
     });
   };
 
@@ -650,5 +655,5 @@ function Lecture() {
   return self;
 };
 
-var lecture = Lecture();
-lecture.setup();
+var browsercast = BrowserCast();
+browsercast.setup();

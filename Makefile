@@ -1,9 +1,9 @@
-all: nblecture.css index.html
+all: browsercast.css index.html
 
 index.html: mkindex
-	./mkindex http://wolever.github.io/nblecture/ > index.html
+	./mkindex http://wolever.github.io/browsercast/ > index.html
 
-nblecture.css: nblecture.less
+browsercast.css: browsercast.less
 	lessc $^ $@
 
 serve:

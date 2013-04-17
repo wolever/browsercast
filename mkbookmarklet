@@ -10,11 +10,11 @@ PREFIX = sys.argv[1]
 
 SCRIPTS = [
     "popcorn-complete-1.3.min.js",
-    "nblecture.js",
+    "browsercast.js",
 ]
 
 CSS = [
-    "nblecture.css",
+    "browsercast.css",
 ]
 
 JS = """
