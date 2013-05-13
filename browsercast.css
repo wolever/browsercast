@@ -36,17 +36,32 @@
 .browsercast-pick-audio-url input {
   width: 100%;
 }
-.code_cell .browsercast-controls {
-  margin-left: 5px;
+.browsercast-controls-container {
+  position: relative;
 }
 .browsercast-controls {
-  margin-bottom: 5px;
+  position: absolute;
+  display: inline-block;
+  width: 150px;
+}
+.browsercast-controls .ui-button {
+  margin-bottom: -7px;
+  height: 20px;
+}
+.browsercast-controls .ui-button.jump-to-time {
+  width: 27px;
+}
+.browsercast-controls .ui-button .ui-icon-check {
+  margin-left: -10px;
+}
+.browsercast-controls .record-controls {
+  display: inline-block;
 }
 .browsercast-controls .input-container {
   position: relative;
   display: inline-block;
 }
-.browsercast-controls .ui-icon {
+.browsercast-controls .input-container .ui-icon {
   position: absolute;
   top: 5px;
   left: 2px;
@@ -60,4 +75,7 @@
 }
 .browsercast-cell-inactive {
   opacity: 0.5;
+}
+.ui-button.bc-button-flushleft {
+  margin-left: -1px;
 }

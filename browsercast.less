@@ -4,7 +4,7 @@
     bottom: 0;
     right: 0;
     height: 40px;
-    
+
     > * {
         vertical-align: top;
         height: 30px;
@@ -47,28 +47,48 @@
     }
 }
 
-.code_cell .browsercast-controls {
-    margin-left: 5px;
+.browsercast-controls-container {
+    position: relative;
 }
 
 .browsercast-controls {
-    margin-bottom: 5px;
+    position: absolute;
+    display: inline-block;
+    width: 150px;
+
+    .ui-button {
+        margin-bottom: -7px;
+        height: 20px;
+            
+        &.jump-to-time {
+            width: 27px;
+        }
+
+        .ui-icon-check {
+            margin-left: -10px;
+        }
+    }
+
+    .record-controls {
+        display: inline-block;
+    }
 
     .input-container {
         position: relative;
         display: inline-block;
+        .ui-icon {
+            position: absolute;
+            top: 5px;
+            left: 2px;
+        }
     }
-    .ui-icon {
-        position: absolute;
-        top: 5px;
-        left: 2px;
-    }
+
     input {
         padding-left: 16px;
         width: 59px;
     }
-
 }
+
 
 .browsercast-cell-hidden {
     display: none;
@@ -79,4 +99,8 @@
 
 .browsercast-cell-inactive {
     opacity: 0.5;
+}
+
+.ui-button.bc-button-flushleft {
+    margin-left: -1px;
 }

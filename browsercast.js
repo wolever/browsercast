@@ -172,19 +172,40 @@ function BrowserCastRecording() {
     cellOpts.controls = self.createCellControls();
     cellOpts.timeInput = cellOpts.controls.find(".browsercast-start-time-input");
     cellOpts.durationInput = cellOpts.controls.find(".browsercast-duration-input");
-    $(cell.element).prepend(cellOpts.controls);
+    var elem = $(cell.element);
+    elem.prepend(cellOpts.controls);
+    var controlsWidth = cellOpts.controls.children().width();
+    var elemPaddingLeft = 5;
+    elem.css({
+      "padding-left": (controlsWidth + elemPaddingLeft) + ".px",
+      "min-height": cellOpts.controls.children().height() + 10 + ".px"
+    });
+    cellOpts.controls.css({
+      "margin-left": -controlsWidth + ".px",
+    });
   };
 
   self.createCellControls = function() {
     var controls = $(
-      "<div class='browsercast-controls'>" +
-        "<div class='input-container'>" +
-          "<span class='ui-icon ui-icon-arrowstop-1-n'></span>" +
-          "<input class='browsercast-start-time-input' placeholder='Start' title='Cell start time' />" +
-        "</div>" +
-        "<div class='input-container'>" +
-          "<span class='ui-icon ui-icon-arrowstop-1-e'></span>" +
-          "<input class='browsercast-duration-input' placeholder='Duration' title='Cell duration'/>" +
+      "<div class='browsercast-controls-container'>" +
+        "<div class='browsercast-controls'>" +
+          "<div class='start-time-input-container'>" +
+            "<div class='input-container'>" +
+              "<span class='ui-icon ui-icon-arrowstop-1-n'></span>" +
+              "<input class='browsercast-start-time-input' placeholder='Start' title='Cell start time' />" +
+            "</div>" +
+            "<div class='jump-to-time ui-button ui-widget ui-state-default ui-corner-right ui-button-icon-only bc-button-flushleft' title='Jump to time'><span class='ui-icon ui-icon-arrowreturnthick-1-w'></span></div>" +
+          "</div>" +
+          "<div class='duration-input-container'>" +
+            "<div class='input-container'>" +
+              "<span class='ui-icon ui-icon-arrowstop-1-e'></span>" +
+              "<input class='browsercast-duration-input' placeholder='Duration' title='Cell duration'/>" +
+            "</div>" +
+            "<div class='ui-buttonset record-controls'>" +
+              "<div class='ui-button ui-widget ui-state-default ui-button-icon-only bc-button-flushleft' title='Mark and move to next cell'><span class='ui-icon ui-icon-check'></span></div>" +
+              "<div class='ui-button ui-widget ui-state-default ui-corner-right ui-button-icon-only' title='Pause playback'><span class='ui-icon ui-icon-pause'></span></div>" +
+            "</div>" +
+          "</div>" +
         "</div>" +
       "</div>"
     );
@@ -466,7 +487,7 @@ function BrowserCast() {
           "<input type='radio' id='browsercast-mode-playback' name='mode' value='playback' />" +
           "<label for='browsercast-mode-playback'>Playback</label>" +
         "</div>" +
-        "<div class='audio-container'>" + 
+        "<div class='audio-container'>" +
           "<span class='state state-empty'>No audio loaded&hellip;</span>" +
           "<span class='state state-loading'>Loading&hellip;</span>" +
           "<span class='state state-error'>Error loading audio.</span>" +
