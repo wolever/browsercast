@@ -79,7 +79,7 @@ function BaseBrowserCastMode() {
   return self;
 }
 
-function BrowserCastRecording() {
+function BrowserCastEditing() {
   var self = BaseBrowserCastMode();
 
   self.keyboardShortcuts = {
@@ -201,7 +201,7 @@ function BrowserCastRecording() {
               "<span class='ui-icon ui-icon-arrowstop-1-e'></span>" +
               "<input class='browsercast-duration-input' placeholder='Duration' title='Cell duration'/>" +
             "</div>" +
-            "<div class='ui-buttonset record-controls'>" +
+            "<div class='ui-buttonset edit-controls'>" +
               "<div class='ui-button ui-widget ui-state-default ui-button-icon-only bc-button-flushleft' title='Mark and move to next cell'><span class='ui-icon ui-icon-check'></span></div>" +
               "<div class='ui-button ui-widget ui-state-default ui-corner-right ui-button-icon-only' title='Pause playback'><span class='ui-icon ui-icon-pause'></span></div>" +
             "</div>" +
@@ -422,7 +422,7 @@ function BrowserCast() {
   self = $.extend(self, {
     events: $(self),
     modes: {
-      recording: BrowserCastRecording(),
+      editing: BrowserCastEditing(),
       playback: BrowserCastPlayback(),
     }
   });
@@ -482,8 +482,8 @@ function BrowserCast() {
     self.view = $(
       "<div class='browsercast-container'>" +
         "<div class='mode-select'>" +
-          "<input type='radio' id='browsercast-mode-record' name='mode' value='recording' checked />" +
-          "<label for='browsercast-mode-record'>Recording</label>" +
+          "<input type='radio' id='browsercast-mode-edit' name='mode' value='editing' checked />" +
+          "<label for='browsercast-mode-edit'>Editing</label>" +
           "<input type='radio' id='browsercast-mode-playback' name='mode' value='playback' />" +
           "<label for='browsercast-mode-playback'>Playback</label>" +
         "</div>" +
