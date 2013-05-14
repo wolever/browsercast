@@ -69,10 +69,6 @@
         }
     }
 
-    .edit-controls {
-        display: inline-block;
-    }
-
     .input-container {
         position: relative;
         display: inline-block;
@@ -89,16 +85,42 @@
     }
 }
 
+.cell {
+    &.browsercast-active-cell {
+        .edit-controls {
+            display: inline-block;
+        }
+    }
+    .edit-controls {
+        display: none;
+    }
+}
+
+.browsercast-active-cell {
+    border-color: #7291D7;
+    border-radius: 4px;
+
+    &.ui-widget-content {
+        border-color: #4E77D7;
+    }
+}
 
 .browsercast-cell-hidden {
     display: none;
 }
 
-.browsercast-cell-active {
+.browsercast-cell-visible {
 }
 
 .browsercast-cell-inactive {
     opacity: 0.5;
+}
+
+.browsercast-mode-editing {
+    .browsercast-cell-hidden,
+    .browsercast-cell-inactive {
+        display: block;
+    }
 }
 
 .ui-button.bc-button-flushleft {

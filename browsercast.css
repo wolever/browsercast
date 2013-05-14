@@ -54,9 +54,6 @@
 .browsercast-controls .ui-button .ui-icon-check {
   margin-left: -10px;
 }
-.browsercast-controls .edit-controls {
-  display: inline-block;
-}
 .browsercast-controls .input-container {
   position: relative;
   display: inline-block;
@@ -70,11 +67,28 @@
   padding-left: 16px;
   width: 59px;
 }
+.cell.browsercast-active-cell .edit-controls {
+  display: inline-block;
+}
+.cell .edit-controls {
+  display: none;
+}
+.browsercast-active-cell {
+  border-color: #7291D7;
+  border-radius: 4px;
+}
+.browsercast-active-cell.ui-widget-content {
+  border-color: #4E77D7;
+}
 .browsercast-cell-hidden {
   display: none;
 }
 .browsercast-cell-inactive {
   opacity: 0.5;
+}
+.browsercast-mode-editing .browsercast-cell-hidden,
+.browsercast-mode-editing .browsercast-cell-inactive {
+  display: block;
 }
 .ui-button.bc-button-flushleft {
   margin-left: -1px;
