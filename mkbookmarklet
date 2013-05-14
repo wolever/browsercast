@@ -5,7 +5,7 @@ import sys
 import os
 
 if len(sys.argv) == 1:
-    sys.argv.append("http://localhost:4240/")
+    sys.argv.append("files/")
 
 PREFIX = sys.argv[1]
 
@@ -45,7 +45,7 @@ COMPILE = [
 
 if os.system("which closure > /dev/null"):
     sys.stderr.write("WARNING: closure compiler not found; "
-                     "not compressing bookmarklet\n")
+                     "not compressing bookmarklet.\n")
     COMPILE = ["cat"]
 
 
