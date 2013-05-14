@@ -97,7 +97,8 @@ function BrowserCastEditing() {
     m: {
       help: "Mark current cell",
       action: function() {
-        self.markSelection();
+        var cell = IPython.notebook.get_selected_cell();
+        self.browsercast.markCell(cell);
       }
     }
   };
@@ -239,16 +240,6 @@ function BrowserCastEditing() {
     }
   };
 
-  self.markSelection = function() {
-    var cell = IPython.notebook.get_selected_cell();
-    var cellOpts = browsercastCellOpts(cell);
-    var time = self.browsercast.getCurrentTime()
-    var timeStr = timeToStr(time);
-    cellOpts.timeInput.val(timeStr);
-    self.recalculateTimings();
-    IPython.notebook.save_notebook();
-  };
-
   self.commitTimeEdit = function() {
     self.recalculateTimings();
     IPython.notebook.save_notebook();
@@ -355,7 +346,7 @@ function BrowserCastCellControlsManager(browsercast) {
     var cellOpts = browsercastCellOpts(cell);
     if (cellOpts.controls)
       return;
-    cellOpts.controls = self.createCellControls();
+    cellOpts.controls = self.createCellControls(cell);
     cellOpts.timeInput = cellOpts.controls.find(".browsercast-start-time-input");
     cellOpts.durationInput = cellOpts.controls.find(".browsercast-duration-input");
     var elem = $(cell.element);
@@ -371,7 +362,7 @@ function BrowserCastCellControlsManager(browsercast) {
     });
   };
 
-  self.createCellControls = function() {
+  self.createCellControls = function(cell) {
     var controls = $(
       "<div class='browsercast-controls-container'>" +
         "<div class='browsercast-controls'>" +
@@ -380,7 +371,7 @@ function BrowserCastCellControlsManager(browsercast) {
               "<span class='ui-icon ui-icon-arrowstop-1-n'></span>" +
               "<input class='browsercast-start-time-input' placeholder='Start' title='Cell start time' />" +
             "</div>" +
-            "<div class='jump-to-time ui-button ui-widget ui-state-default ui-corner-right ui-button-icon-only bc-button-flushleft' title='Jump to time'><span class='ui-icon ui-icon-arrowreturnthick-1-w'></span></div>" +
+            "<div class='jump-to-time ui-button ui-widget ui-state-default ui-corner-right ui-button-icon-only bc-button-flushleft' title='Jump to time' data-action='jump'><span class='ui-icon ui-icon-arrowreturnthick-1-w'></span></div>" +
           "</div>" +
           "<div class='duration-input-container'>" +
             "<div class='input-container'>" +
@@ -388,8 +379,8 @@ function BrowserCastCellControlsManager(browsercast) {
               "<input class='browsercast-duration-input' placeholder='Duration' title='Cell duration'/>" +
             "</div>" +
             "<div class='ui-buttonset edit-controls'>" +
-              "<div class='ui-button ui-widget ui-state-default ui-button-icon-only bc-button-flushleft' title='Mark and move to next cell'><span class='ui-icon ui-icon-check'></span></div>" +
-              "<div class='ui-button ui-widget ui-state-default ui-corner-right ui-button-icon-only' title='Pause playback'><span class='ui-icon ui-icon-pause'></span></div>" +
+              "<div class='ui-button ui-widget ui-state-default ui-button-icon-only bc-button-flushleft' title='Mark and move to next cell' data-action='mark'><span class='ui-icon ui-icon-check'></span></div>" +
+              "<div class='ui-button ui-widget ui-state-default ui-corner-right ui-button-icon-only' title='Pause playback' data-action='pause'><span class='ui-icon ui-icon-pause'></span></div>" +
             "</div>" +
           "</div>" +
         "</div>" +
@@ -402,7 +393,36 @@ function BrowserCastCellControlsManager(browsercast) {
       self.browsercast.events.trigger("cellTimingInputChange");
     });
 
+    controls.find(".ui-button").each(function() {
+      var $this = $(this);
+      var oldClass = $this.attr("class");
+      $this.button();
+      $this.attr("class", oldClass);
+    });
+
+    controls.on("click", ".ui-button[data-action]", function() {
+      var action = $(this).attr("data-action");
+      var handler = self["onCellClick_" + action];
+      if (!handler) {
+        alert("Error: no BrowserCastCellControlsManager handler for " + action);
+        return;
+      }
+      handler(cell);
+    });
     return controls;
+  };
+
+  self.onCellClick_jump = function(cell) {
+    var cellOpts = browsercastCellOpts(cell);
+    self.browsercast.setCurrentTime(cellOpts.meta.time || 0);
+  };
+
+  self.onCellClick_mark = function(cell) {
+    self.browsercast.markCell(cell);
+  };
+
+  self.onCellClick_pause = function(cell) {
+    self.browsercast.togglePlayPause();
   };
 
   return self;
@@ -616,10 +636,6 @@ function BrowserCast() {
     }
   };
 
-  self.audioJump = function(offset) {
-    self.audio.currentTime(self.getCurrentTime() + offset);
-  };
-
   self.showKeyboardShortcuts = function() {
     var shortcutsHTML = [];
     var shortcuts = $.extend({},
@@ -686,6 +702,23 @@ function BrowserCast() {
 
   self.getCurrentTime = function() {
     return self.audio.currentTime();
+  };
+
+  self.setCurrentTime = function(newTime) {
+    self.audio.currentTime(newTime);
+  };
+
+  self.audioJump = function(offset) {
+    self.setCurrentTime(self.getCurrentTime() + offset);
+  };
+
+  self.markCell = function(cell) {
+    var cellOpts = browsercastCellOpts(cell);
+    var time = self.getCurrentTime();
+    var timeStr = timeToStr(time);
+    cellOpts.timeInput.val(timeStr);
+    self.events.trigger("cellTimingInputChange");
+    IPython.notebook.save_notebook();
   };
 
   return self;
