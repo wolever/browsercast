@@ -36,17 +36,29 @@
 .browsercast-pick-audio-url input {
   width: 100%;
 }
-.code_cell .browsercast-controls {
-  margin-left: 5px;
+.browsercast-controls-container {
+  position: relative;
 }
 .browsercast-controls {
-  margin-bottom: 5px;
+  position: absolute;
+  display: inline-block;
+  width: 150px;
+}
+.browsercast-controls .ui-button {
+  margin-bottom: -7px;
+  height: 20px;
+}
+.browsercast-controls .ui-button.jump-to-time {
+  width: 27px;
+}
+.browsercast-controls .ui-button .ui-icon-check {
+  margin-left: -10px;
 }
 .browsercast-controls .input-container {
   position: relative;
   display: inline-block;
 }
-.browsercast-controls .ui-icon {
+.browsercast-controls .input-container .ui-icon {
   position: absolute;
   top: 5px;
   left: 2px;
@@ -55,9 +67,29 @@
   padding-left: 16px;
   width: 59px;
 }
+.cell.browsercast-active-cell .edit-controls {
+  display: inline-block;
+}
+.cell .edit-controls {
+  display: none;
+}
+.browsercast-active-cell {
+  border-color: #7291D7;
+  border-radius: 4px;
+}
+.browsercast-active-cell.ui-widget-content {
+  border-color: #4E77D7;
+}
 .browsercast-cell-hidden {
   display: none;
 }
 .browsercast-cell-inactive {
   opacity: 0.5;
+}
+.browsercast-mode-editing .browsercast-cell-hidden,
+.browsercast-mode-editing .browsercast-cell-inactive {
+  display: block;
+}
+.ui-button.bc-button-flushleft {
+  margin-left: -1px;
 }

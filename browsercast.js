@@ -5,6 +5,22 @@ function log() {
     window.console.log.apply(window.console, arguments);
 }
 
+var debounce = function(func, wait, immediate) {
+  var timeout, result;
+  return function() {
+    var context = this, args = arguments;
+    var later = function() {
+      timeout = null;
+      if (!immediate) result = func.apply(context, args);
+    };
+    var callNow = immediate && !timeout;
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+    if (callNow) result = func.apply(context, args);
+    return result;
+  };
+};
+
 function timeToStr(seconds) {
   var isNeg = seconds < 0;
   if (isNeg)
@@ -49,6 +65,36 @@ function toggleVisible(elems, commonClass, toShow) {
   elems.find("." + toShow).show();
 }
 
+function BrowserCastCellOptions(browsercast, cell) {
+  var self = {
+    browsercast: browsercast,
+    cell: cell,
+    cellID: cell.cell_id,
+    cellDom: $(cell.element),
+    time: 0,
+    timeInput: null,
+    duration: null,
+    durationInput: null,
+    controls: null
+  };
+
+  self.setupCell = function() {
+    if (!self.cell.metadata.browsercast)
+      self.cell.metadata.browsercast = {};
+    self.meta = cell.metadata.browsercast;
+  };
+
+  self.setupCell();
+  return self;
+};
+
+BrowserCastCellOptions.getForCell = function(browsercast, cell) {
+  if (!cell._browsercastOptions)
+    cell._browsercastOptions = BrowserCastCellOptions(browsercast, cell);
+  return cell._browsercastOptions;
+};
+
+
 function BaseBrowserCastMode() {
   var self = {};
   self.keyboardShortcuts = {};
@@ -79,21 +125,17 @@ function BaseBrowserCastMode() {
   return self;
 }
 
-function BrowserCastRecording() {
+function BrowserCastEditing() {
   var self = BaseBrowserCastMode();
 
   self.keyboardShortcuts = {
     m: {
       help: "Mark current cell",
       action: function() {
-        self.markSelection();
+        var cell = IPython.notebook.get_selected_cell();
+        self.browsercast.markCellEnd(cell);
       }
     }
-  };
-
-  self._loadFromNotebook = function() {
-    self.setupAllCellControls();
-    self.recalculateTimings();
   };
 
   self._activate = function() {
@@ -113,89 +155,13 @@ function BrowserCastRecording() {
       self._loadFromNotebook();
     }
 
-    // Inject the time coding stuff into cells
-    $([IPython.events]).on("selected_cell_type_changed.Notebook", self.onSelectCell);
-  }
+    self.browsercast.events.on("cellTimingInputChange", self.recalculateTimings);
+  };
 
   self._deactivate = function() {
     self.pickAudioBtn.remove();
     self.pickAudioBtn = null;
-    $([IPython.events]).off("selected_cell_type_changed.Notebook", self.onSelectCell);
-    self.teardownAllCellControls();
-  };
-
-  self.cellOpts = function(cell) {
-    if (!cell._browsercast) {
-      if (!cell.metadata.browsercast)
-        cell.metadata.browsercast = {};
-      cell._browsercast = {
-        meta: cell.metadata.browsercast
-      };
-    }
-    return cell._browsercast;
-  };
-
-  self.onSelectCell = function() {
-    // Because the Notebook doesn't currently trigger any explicit event when a
-    // cell is created, we need to check to see if the current cell needs
-    // controls each time the selection is changed.
-    if (!self._didLoadFromNotebook)
-      return;
-    var cell = IPython.notebook.get_selected_cell();
-    self.setupCellControls(cell);
-    self.recalculateTimings();
-  };
-
-  self.setupAllCellControls = function() {
-    var cells = IPython.notebook.get_cells();
-    for (var i = 0; i < cells.length; i += 1) {
-      self.setupCellControls(cells[i]);
-    }
-  };
-
-  self.teardownAllCellControls = function() {
-    var cells = IPython.notebook.get_cells();
-    for (var i = 0; i < cells.length; i += 1) {
-      var cell = cells[i];
-      var cellOpts = self.cellOpts(cell);
-      if (!cellOpts.controls)
-        continue;
-      cellOpts.controls.remove();
-      cellOpts.controls = null;
-    }
-  };
-
-  self.setupCellControls = function(cell) {
-    var cellOpts = self.cellOpts(cell);
-    if (cellOpts.controls)
-      return;
-    cellOpts.controls = self.createCellControls();
-    cellOpts.timeInput = cellOpts.controls.find(".browsercast-start-time-input");
-    cellOpts.durationInput = cellOpts.controls.find(".browsercast-duration-input");
-    $(cell.element).prepend(cellOpts.controls);
-  };
-
-  self.createCellControls = function() {
-    var controls = $(
-      "<div class='browsercast-controls'>" +
-        "<div class='input-container'>" +
-          "<span class='ui-icon ui-icon-arrowstop-1-n'></span>" +
-          "<input class='browsercast-start-time-input' placeholder='Start' title='Cell start time' />" +
-        "</div>" +
-        "<div class='input-container'>" +
-          "<span class='ui-icon ui-icon-arrowstop-1-e'></span>" +
-          "<input class='browsercast-duration-input' placeholder='Duration' title='Cell duration'/>" +
-        "</div>" +
-      "</div>"
-    );
-
-    controls.find("input").on("keypress blur", function(event) {
-      if (event.type == "keypress" && event.which != 13) // enter
-        return;
-      self.commitTimeEdit();
-    });
-
-    return controls;
+    self.browsercast.events.off("cellTimingInputChange", self.recalculateTimings);
   };
 
   self.pickAudioURL = function() {
@@ -237,6 +203,9 @@ function BrowserCastRecording() {
    * input fields are changed.
    */
   self.recalculateTimings = function() {
+    log("Recalculating times...");
+    var audio = self.browsercast.audio;
+    var audioEnd = audio.duration() + 1;
     var cells = IPython.notebook.get_cells();
     var lastOpts = null;
     var curTime = 0;
@@ -244,7 +213,7 @@ function BrowserCastRecording() {
     var timeOffset = 0;
     for (var i = 0; i < cells.length; i += 1) {
       var cell = cells[i];
-      var cellOpts = self.cellOpts(cell);
+      var cellOpts = BrowserCastCellOptions.getForCell(self.browsercast, cell);
       var curTimeStr = cellOpts.timeInput.val();
 
       // This cell's timing, according to it's metadata (the "saved time").
@@ -297,6 +266,14 @@ function BrowserCastRecording() {
       cellOpts.time = Math.max(lastOpts? lastOpts.time : 0, curTime + timeOffset);
       cellOpts.meta.time = cellOpts.time;
       cellOpts.timeInput.val(timeToStr(cellOpts.time));
+      audio.browsercastCell("bc-" + cellOpts.cellID, {
+        start: cellOpts.time - 0.001,
+        end: audioEnd,
+        cellIndex: i,
+        cellOpts: cellOpts,
+        cellDom: cellOpts.cellDom
+      });
+      console.log("i:", i);
       lastOpts = cellOpts;
       timeOffset += curOffset;
     }
@@ -305,23 +282,70 @@ function BrowserCastRecording() {
       // Hide the duration input for the last cell, because it doesn't make
       // sense to either show or edit it.
       lastOpts.duration = null;
-      cellOpts.durationInput.parent().hide();
+      cellOpts.durationInput.parents(".duration-input-container").hide();
     }
   };
 
-  self.markSelection = function() {
-    var cell = IPython.notebook.get_selected_cell();
-    var cellOpts = self.cellOpts(cell);
-    var time = self.browsercast.getCurrentTime()
-    var timeStr = timeToStr(time);
-    cellOpts.timeInput.val(timeStr);
-    self.recalculateTimings();
-    IPython.notebook.save_notebook();
+  return self;
+}
+
+function BrowserCastPopcornPlugin(browsercast) {
+  var self = {
+    browsercast: browsercast,
+    activeCellStack: []
   };
 
-  self.commitTimeEdit = function() {
-    self.recalculateTimings();
-    IPython.notebook.save_notebook();
+  // General stuff
+  self.cellClassPrefix = "browsercast-cell-";
+  self.toggleCellClass = function(cellDom, newClassSuffix) {
+    var newClass = newClassSuffix? self.cellClassPrefix + newClassSuffix : "";
+    toggleClassPrefix(cellDom, self.cellClassPrefix, newClass);
+  };
+
+  self.activeCellClass = "browsercast-active-cell";
+  self.updateActiveCells = function(popcorn) {
+    // todo: this could be sped up quite a bit...
+    var curTime = self.browsercast.getCurrentTime();
+    var trackEvents = popcorn.data.trackEvents.byStart;
+    $("." + self.activeCellClass).removeClass(self.activeCellClass);
+    var lastTrackEvent = null;
+    for (var i = trackEvents.length - 1; i >= 0; i -= 1) {
+      var trackEvent = trackEvents[i];
+      if (lastTrackEvent && trackEvent.start !== lastTrackEvent.start)
+        break;
+      if (trackEvent.start <= curTime) {
+        lastTrackEvent = trackEvent;
+        trackEvent.cellDom.addClass(self.activeCellClass);
+      }
+    };
+  };
+
+  // Popcorn plugin stuff
+  self._setup = function(options){
+    log("_setup", options.cellIndex);
+    self.toggleCellClass(options.cellDom, "hidden");
+    self.updateActiveCells(this);
+  };
+
+  self._teardown = function() {
+    log("_teardown", options.cellIndex);
+    self.updateActiveCells(this);
+  };
+
+  self.start = function(event, options){
+    log("showing", options.cellIndex, "at t =", self.browsercast.getCurrentTime());
+    self.toggleCellClass(options.cellDom, "visible");
+    self.updateActiveCells(this);
+  };
+
+  self.end = function(event, options){
+    log("hiding", options.cellIndex, "at t =", self.browsercast.getCurrentTime());
+    self.toggleCellClass(options.cellDom, "inactive");
+    self.updateActiveCells(this);
+  };
+
+  self.toString = function(options){
+    return "[browsercastPopcornPlugin start=" + options.start + "]";
   };
 
   return self;
@@ -332,78 +356,139 @@ function BrowserCastPlayback() {
 
   self._activate = function(browsercast) {
     self.audio = self.browsercast.audio;
-    self.setupPopcornEvents();
   };
 
   self._deactivate = function() {
-    self.teardownPopcornEvents();
     self.audio = null;
-  };
-
-  self.cellClassPrefix = "browsercast-cell-";
-  self.toggleCellClass = function(cellDom, newClassSuffix) {
-    var newClass = newClassSuffix? self.cellClassPrefix + newClassSuffix : "";
-    toggleClassPrefix(cellDom, self.cellClassPrefix, newClass);
-  };
-
-  self.popcornPlugin = {
-    _setup: function(options){
-      self.toggleCellClass(options.cellDom, "hidden");
-    },
-    _teardown:  function(options) {
-      self.toggleCellClass(options.cellDom, null);
-    },
-    start: function(event, options){
-      log("showing", options.cellIndex, "at", self.browsercast.getCurrentTime());
-      self.toggleCellClass(options.cellDom, "active");
-      IPython.notebook.select(options.cellIndex);
-    },
-    end: function(event, options){
-      log("hiding", options.cellIndex, "at", self.browsercast.getCurrentTime());
-      self.toggleCellClass(options.cellDom, "inactive");
-      IPython.notebook.select(Math.max(options.cellIndex - 1, 0));
-    },
-    toString: function(options){
-      return "[browsercastCell start=" + options.start + "]";
-    }
-  };
-
-  self.setupPopcornEvents = function() {
-    Popcorn.plugin("browsercastCell", self.popcornPlugin);
-    log("setup popcorn plugin...");
-    var cells = IPython.notebook.get_cells();
-    var cellElements = IPython.notebook.get_cell_elements();
-    var curMark = { time: 0 };
-    var end = self.audio.duration() + 1;
-    cells.forEach(function(cell, index) {
-      curMark = cell.metadata.browsercast || curMark;
-      log("Mark: start", curMark.time, "end", end, "index", index);
-      self.audio.browsercastCell({
-        start: curMark.time,
-        end: end,
-        cellDom: $(cellElements[index]),
-        cellIndex: index
-      });
-    });
-  };
-
-  self.teardownPopcornEvents = function() {
-    Popcorn.removePlugin(self.audio, "browsercastCell");
-    Popcorn.removePlugin("browsercastCell");
-    log("removed popcorn plugin");
   };
 
   return self;
 }
+
+function BrowserCastCellControlsManager(browsercast) {
+  var self = {
+    browsercast: browsercast
+  };
+
+  self.setup = function() {
+    browsercast.events.on({
+      notebookLoaded: self.onNotebookLoaded,
+      cellAdded: self.onCellAdded,
+    });
+  };
+
+  self.onNotebookLoaded = function() {
+    var cells = IPython.notebook.get_cells();
+    for (var i = 0; i < cells.length; i += 1) {
+      self.setupCellControls(cells[i], { noTimingInputChange: true });
+    }
+    self.browsercast.events.trigger("cellTimingInputChange");
+  };
+
+  self.onCellAdded = function(event, cell) {
+    self.setupCellControls(cell);
+    self.browsercast.events.trigger("cellTimingInputChange");
+  };
+
+  self.setupCellControls = function(cell) {
+    var cellOpts = BrowserCastCellOptions.getForCell(self.browsercast, cell);
+    if (cellOpts.controls)
+      return;
+    cellOpts.controls = self.createCellControls(cell);
+    cellOpts.timeInput = cellOpts.controls.find(".browsercast-start-time-input");
+    cellOpts.durationInput = cellOpts.controls.find(".browsercast-duration-input");
+    var elem = $(cell.element);
+    elem.prepend(cellOpts.controls);
+    var controlsWidth = cellOpts.controls.children().width();
+    var elemPaddingLeft = 5;
+    elem.css({
+      "padding-left": (controlsWidth + elemPaddingLeft) + ".px",
+      "min-height": cellOpts.controls.children().height() + 10 + ".px"
+    });
+    cellOpts.controls.css({
+      "margin-left": -controlsWidth + ".px",
+    });
+  };
+
+  self.createCellControls = function(cell) {
+    var controls = $(
+      "<div class='browsercast-controls-container'>" +
+        "<div class='browsercast-controls'>" +
+          "<div class='start-time-input-container'>" +
+            "<div class='input-container'>" +
+              "<span class='ui-icon ui-icon-arrowstop-1-n'></span>" +
+              "<input class='browsercast-start-time-input' placeholder='Start' title='Cell start time' />" +
+            "</div>" +
+            "<div class='jump-to-time ui-button ui-widget ui-state-default ui-corner-right ui-button-icon-only bc-button-flushleft' title='Jump to time' data-action='jump'><span class='ui-icon ui-icon-arrowreturnthick-1-w'></span></div>" +
+          "</div>" +
+          "<div class='duration-input-container'>" +
+            "<div class='input-container'>" +
+              "<span class='ui-icon ui-icon-arrowstop-1-e'></span>" +
+              "<input class='browsercast-duration-input' placeholder='Duration' title='Cell duration'/>" +
+            "</div>" +
+            "<div class='ui-buttonset edit-controls'>" +
+              "<div class='ui-button ui-widget ui-state-default ui-button-icon-only bc-button-flushleft' title='Mark and move to next cell' data-action='mark'><span class='ui-icon ui-icon-check'></span></div>" +
+              "<div class='ui-button ui-widget ui-state-default ui-corner-right ui-button-icon-only' title='Pause playback' data-action='pause'><span class='ui-icon ui-icon-pause'></span></div>" +
+            "</div>" +
+          "</div>" +
+        "</div>" +
+      "</div>"
+    );
+
+    controls.find("input").on("keypress blur", function(event) {
+      if (event.type == "keypress" && event.which != 13) // enter
+        return;
+      self.browsercast.events.trigger("cellTimingInputChange");
+    });
+
+    controls.find(".ui-button").each(function() {
+      var $this = $(this);
+      var oldClass = $this.attr("class");
+      $this.button();
+      $this.attr("class", oldClass);
+    });
+
+    controls.on("click", ".ui-button[data-action]", function(event) {
+      var action = $(this).attr("data-action");
+      var handler = self["onCellClick_" + action];
+      if (!handler) {
+        alert("Error: no BrowserCastCellControlsManager handler for " + action);
+        return;
+      }
+      handler(cell);
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    });
+    return controls;
+  };
+
+  self.onCellClick_jump = function(cell) {
+    var cellOpts = BrowserCastCellOptions.getForCell(self.browsercast, cell);
+    self.browsercast.setCurrentTime(cellOpts.time || 0);
+  };
+
+  self.onCellClick_mark = function(cell) {
+    self.browsercast.markCellEnd(cell);
+  };
+
+  self.onCellClick_pause = function(cell) {
+    self.browsercast.togglePlayPause();
+  };
+
+  return self;
+};
 
 function BrowserCast() {
   var self = {};
   self = $.extend(self, {
     events: $(self),
     modes: {
-      recording: BrowserCastRecording(),
+      editing: BrowserCastEditing(),
       playback: BrowserCastPlayback(),
-    }
+    },
+    // New marks will be offset backwards by MARK_JITTER to compensate for
+    // reaction time.
+    MARK_JITTER: 0.08
   });
 
   self.keyboardShortcuts = {
@@ -452,21 +537,27 @@ function BrowserCast() {
   };
 
   self.setup = function() {
+    self.setupPopcorn();
     self.injectHTML();
+    self.setupCellControlsManager();
     self.updateMode();
     self.setupEvents();
+  };
+
+  self.setupPopcorn = function() {
+    Popcorn.plugin("browsercastCell", BrowserCastPopcornPlugin(self));
   };
 
   self.injectHTML = function() {
     self.view = $(
       "<div class='browsercast-container'>" +
         "<div class='mode-select'>" +
-          "<input type='radio' id='browsercast-mode-record' name='mode' value='recording' checked />" +
-          "<label for='browsercast-mode-record'>Recording</label>" +
+          "<input type='radio' id='browsercast-mode-edit' name='mode' value='editing' checked />" +
+          "<label for='browsercast-mode-edit'>Editing</label>" +
           "<input type='radio' id='browsercast-mode-playback' name='mode' value='playback' />" +
           "<label for='browsercast-mode-playback'>Playback</label>" +
         "</div>" +
-        "<div class='audio-container'>" + 
+        "<div class='audio-container'>" +
           "<span class='state state-empty'>No audio loaded&hellip;</span>" +
           "<span class='state state-loading'>Loading&hellip;</span>" +
           "<span class='state state-error'>Error loading audio.</span>" +
@@ -482,7 +573,13 @@ function BrowserCast() {
     self.log = self.view.find(".log");
   };
 
+  self.setupCellControlsManager = function() {
+    self.cellControlsManager = BrowserCastCellControlsManager(self);
+    self.cellControlsManager.setup();
+  };
+
   self.setupEvents = function() {
+    // IPython save/load events
     self.view.find(".mode-select input").change(self.updateMode);
     $([IPython.events]).on('notebook_saving.Notebook', function() {
       self.saveToNotebook();
@@ -494,6 +591,26 @@ function BrowserCast() {
       self.loadFromNotebook();
     };
 
+    // IPython cellSeleted + cellAdded events
+    $([IPython.events]).on("selected_cell_type_changed.Notebook", function() {
+      // Because the Notebook doesn't currently trigger any explicit event when
+      // a cell is created, we need to check to see if the current cell needs
+      // controls each time the selection is changed.
+      var cell = IPython.notebook.get_selected_cell();
+      if (!cell._browsercastDidTriggerNew && self._didLoadFromNotebook) {
+        cell._browsercastDidTriggerNew = true;
+        self.events.trigger("cellAdded", [cell]);
+      }
+      // DW: well... This is where the 'cellSeleted' event could go if we
+      // needed it...
+      //self.events.trigger("cellSelected", [cell]);
+    });
+
+    self.events.on("cellTimingInputChange", debounce(function() {
+      IPython.notebook.save_notebook();
+    }, 250));
+
+    // Browser keyboard shortcuts
     $(document).keydown(function (event) {
       if (event.which === 76 && event.ctrlKey && !self._keyboard_active) {
         // ctrl-l to begin browsercast-mode commands
@@ -533,6 +650,8 @@ function BrowserCast() {
     if (self._didLoadFromNotebook)
       self.activeMode.loadFromNotebook();
     self.activeMode.activate(self);
+    toggleClassPrefix($(document.body), "browsercast-mode-",
+                      "browsercast-mode-" + name);
   };
 
   self.showLog = function(msg) {
@@ -554,6 +673,11 @@ function BrowserCast() {
     self.setAudioURL(browsercast.audioURL);
     self.activeMode.loadFromNotebook();
     self._didLoadFromNotebook = true;
+    var cells = IPython.notebook.get_cells();
+    for (var i = 0; i < cells.length; i += 1) {
+      cells[i]._browsercastDidTriggerNew = true;
+    };
+    self.events.trigger("notebookLoaded");
   };
 
   self.moveSelection = function(delta) {
@@ -578,10 +702,6 @@ function BrowserCast() {
       self.audio.pause();
       self.showLog("Paused.");
     }
-  };
-
-  self.audioJump = function(offset) {
-    self.audio.currentTime(self.getCurrentTime() + offset);
   };
 
   self.showKeyboardShortcuts = function() {
@@ -650,6 +770,27 @@ function BrowserCast() {
 
   self.getCurrentTime = function() {
     return self.audio.currentTime();
+  };
+
+  self.setCurrentTime = function(newTime) {
+    self.audio.currentTime(newTime);
+  };
+
+  self.audioJump = function(offset) {
+    self.setCurrentTime(self.getCurrentTime() + offset);
+  };
+
+  self.markCellEnd = function(cell) {
+    var cellOpts = BrowserCastCellOptions.getForCell(self, cell);
+    var curTime = self.getCurrentTime();
+    var duration = Math.max(
+      0,
+      curTime - (cellOpts.time || 0) - self.MARK_JITTER
+    );
+    var durationStr = timeToStr(duration);
+    cellOpts.durationInput.val(durationStr);
+    self.events.trigger("cellTimingInputChange");
+    IPython.notebook.select_next();
   };
 
   return self;

@@ -2,9 +2,10 @@
 import subprocess as sp
 import json
 import sys
+import os
 
 if len(sys.argv) == 1:
-    sys.argv.append("http://localhost:4240/")
+    sys.argv.append("files/")
 
 PREFIX = sys.argv[1]
 
@@ -37,9 +38,16 @@ JS = """
     "CSS": json.dumps(CSS),
 }
 
+
 COMPILE = [
     "closure", "--compilation_level", "ADVANCED_OPTIMIZATIONS"
 ]
+
+if os.system("which closure > /dev/null"):
+    sys.stderr.write("WARNING: closure compiler not found; "
+                     "not compressing bookmarklet.\n")
+    COMPILE = ["cat"]
+
 
 compiler = sp.Popen(COMPILE, stdin=sp.PIPE, stdout=sp.PIPE)
 compiled, _ = compiler.communicate(input=JS)
