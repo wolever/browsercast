@@ -5,6 +5,22 @@ function log() {
     window.console.log.apply(window.console, arguments);
 }
 
+var debounce = function(func, wait, immediate) {
+  var timeout, result;
+  return function() {
+    var context = this, args = arguments;
+    var later = function() {
+      timeout = null;
+      if (!immediate) result = func.apply(context, args);
+    };
+    var callNow = immediate && !timeout;
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+    if (callNow) result = func.apply(context, args);
+    return result;
+  };
+};
+
 function timeToStr(seconds) {
   var isNeg = seconds < 0;
   if (isNeg)
@@ -287,50 +303,45 @@ function BrowserCastPopcornPlugin(browsercast) {
   };
 
   self.activeCellClass = "browsercast-active-cell";
-
-  self.pushActiveCell = function(cellDom) {
-    var lastActive = self.activeCellStack[self.activeCellStack.length - 1];
-    var nowActive = cellDom;
-    self.activeCellStack.push(nowActive);
-    if (lastActive)
-      lastActive.removeClass(self.activeCellClass);
-    nowActive.addClass(self.activeCellClass);
-  };
-
-  self.popActiveCell = function(cellDom) {
-    var lastActive = self.activeCellStack.pop();
-    var nowActive = self.activeCellStack[self.activeCellStack.length - 1];
-    if (lastActive !== cellDom) {
-      return; // XXX: uhhh... ya... fix this...
-      alert("OHNO! Assumption failed: cells aren't pushed/popped in order");
-      log("lastActive:", lastActive);
-      log("cellDom:", cellDom);
-      log("activeCellStack:", self.activeCellStack);
+  self.updateActiveCells = function(popcorn) {
+    // todo: this could be sped up quite a bit...
+    var curTime = self.browsercast.getCurrentTime();
+    var trackEvents = popcorn.data.trackEvents.byStart;
+    $("." + self.activeCellClass).removeClass(self.activeCellClass);
+    var lastTrackEvent = null;
+    for (var i = trackEvents.length - 1; i >= 0; i -= 1) {
+      var trackEvent = trackEvents[i];
+      if (lastTrackEvent && trackEvent.start !== lastTrackEvent.start)
+        break;
+      if (trackEvent.start <= curTime) {
+        lastTrackEvent = trackEvent;
+        trackEvent.cellDom.addClass(self.activeCellClass);
+      }
     };
-    lastActive.removeClass(self.activeCellClass);
-    if (nowActive)
-      nowActive.addClass(self.activeCellClass);
   };
 
   // Popcorn plugin stuff
   self._setup = function(options){
+    log("_setup", options.cellIndex);
     self.toggleCellClass(options.cellDom, "hidden");
+    self.updateActiveCells(this);
   };
 
-  self._teardown = function(options) {
-    self.toggleCellClass(options.cellDom, null);
+  self._teardown = function() {
+    log("_teardown", options.cellIndex);
+    self.updateActiveCells(this);
   };
 
   self.start = function(event, options){
     log("showing", options.cellIndex, "at t =", self.browsercast.getCurrentTime());
     self.toggleCellClass(options.cellDom, "visible");
-    self.pushActiveCell(options.cellDom);
+    self.updateActiveCells(this);
   };
 
   self.end = function(event, options){
     log("hiding", options.cellIndex, "at t =", self.browsercast.getCurrentTime());
     self.toggleCellClass(options.cellDom, "inactive");
-    self.popActiveCell(options.cellDom);
+    self.updateActiveCells(this);
   };
 
   self.toString = function(options){
@@ -595,6 +606,10 @@ function BrowserCast() {
       //self.events.trigger("cellSelected", [cell]);
     });
 
+    self.events.on("cellTimingInputChange", debounce(function() {
+      IPython.notebook.save_notebook();
+    }, 250));
+
     // Browser keyboard shortcuts
     $(document).keydown(function (event) {
       if (event.which === 76 && event.ctrlKey && !self._keyboard_active) {
@@ -775,7 +790,6 @@ function BrowserCast() {
     var durationStr = timeToStr(duration);
     cellOpts.durationInput.val(durationStr);
     self.events.trigger("cellTimingInputChange");
-    IPython.notebook.save_notebook();
     IPython.notebook.select_next();
   };
 
