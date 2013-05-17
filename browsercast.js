@@ -183,6 +183,8 @@ function BrowserCastEditing() {
     if (paused) {
       self.recalculateTimings();
     }
+    toggleClassPrefix($(".pause-icon"), "ui-icon-",
+                      "ui-icon-" + (paused? "play" : "pause"));
   };
 
   self.onLazyAudioProgress = function(event, curTime) {
@@ -454,7 +456,7 @@ function BrowserCastCellControlsManager(browsercast) {
               "<input class='browsercast-duration-input' placeholder='Duration' title='Cell duration'/>" +
             "</div>" +
             "<div class='ui-buttonset edit-controls'>" +
-              "<div class='ui-button ui-widget ui-state-default ui-button-icon-only bc-corner-none bc-button-flushleft' title='Pause playback' data-action='pause'><span class='ui-icon ui-icon-pause'></span></div>" +
+              "<div class='ui-button ui-widget ui-state-default ui-button-icon-only bc-corner-none bc-button-flushleft' title='Play/Pause playback' data-action='pause'><span class='pause-icon ui-icon ui-icon-play'></span></div>" +
               "<div class='ui-button ui-widget ui-state-default ui-button-icon-only ui-corner-right' title='Mark and move to next cell' data-action='mark'><span class='ui-icon ui-icon-check'></span></div>" +
             "</div>" +
           "</div>" +
