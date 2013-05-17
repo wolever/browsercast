@@ -904,10 +904,11 @@ function BrowserCast() {
   self.markCellEnd = function(cell) {
     var cellOpts = BrowserCastCellOptions.getForCell(self, cell);
     var curTime = self.getCurrentTime();
-    var duration = Math.max(
-      0,
-      curTime - (cellOpts.time || 0) - self.MARK_JITTER
-    );
+    var duration = curTime - (cellOpts.time || 0);
+    if (self.audio.playing()) {
+      duration -= self.MARK_JITTER;
+    }
+    duration = Math.max(duration, 0);
     var durationStr = timeToStr(duration);
     cellOpts.durationInput.val(durationStr);
     self.events.trigger("cellTimingInputChange");
