@@ -172,6 +172,7 @@ function BrowserCastEditing() {
     self.onAudioPaused(null, self.browsercast.audio.paused());
     self.browsercast.events.on("lazyAudioProgress", self.onLazyAudioProgress);
     self.browsercast.events.on("cellTimingInputChange", self.recalculateTimings);
+    self.browsercast.events.on("seekDone", self.recalculateTimings);
     self.browsercast.events.on("audioPaused", self.onAudioPaused);
   };
 
@@ -179,6 +180,7 @@ function BrowserCastEditing() {
     self.pickAudioBtn.remove();
     self.pickAudioBtn = null;
     self.browsercast.events.off("audioPaused", self.onAudioPaused);
+    self.browsercast.events.off("seekDone", self.recalculateTimings);
     self.browsercast.events.off("cellTimingInputChange", self.recalculateTimings);
     self.browsercast.events.off("lazyAudioProgress", self.onLazyAudioProgress);
   };
@@ -200,7 +202,7 @@ function BrowserCastEditing() {
     var activeOpts = allActive[allActive.length - 1];
     if (!activeOpts)
       return;
-    var offset = curTime - activeOpts.time;
+    var offset = Math.max(curTime - activeOpts.time, 0);
     activeOpts.durationInput.val(timeToStr(offset));
   };
 
@@ -266,7 +268,8 @@ function BrowserCastEditing() {
 
       // The offset introduced by this cell. Will be applied to 'timeOffset'
       // after this cell's time has been saved.
-      curOffset = curTime - metaTime;
+      var curOffsetUnrounded = curTime - metaTime;
+      curOffset = Math.round(curOffsetUnrounded * 100) / 100;
       if (curOffset != 0) {
         self.browsercast.showLog(
           "Adjusting time from " + timeToStr(metaTime) + " " +
@@ -497,7 +500,7 @@ function BrowserCastCellControlsManager(browsercast) {
         alert("Error: no BrowserCastCellControlsManager handler for " + action);
         return;
       }
-      handler(cell);
+      handler(cell, event);
       event.preventDefault();
       event.stopImmediatePropagation();
     });
@@ -510,8 +513,22 @@ function BrowserCastCellControlsManager(browsercast) {
     self.browsercast.setActiveCells([cellOpts]);
   };
 
-  self.onCellClick_mark = function(cell) {
+  self.onCellClick_mark = function(cell, event) {
+    var lastTop = $(event.target).offset().top;
     self.browsercast.markCellEnd(cell);
+    var nowActive = self.browsercast.getActiveCells()[0];
+    if (!nowActive)
+      return;
+    var markBtn = nowActive.cellDom.find("[data-action=mark]");
+    var newTop = markBtn.offset().top;
+    if (newTop == 0) {
+      // Will happen if the element is invisible (ex, the last one)
+      return;
+    }
+    var nb = $("#notebook");
+    nb.animate({
+      scrollTop: nb.scrollTop() + (newTop - lastTop)
+    });
   };
 
   self.onCellClick_pause = function(cell) {
@@ -533,6 +550,7 @@ function BrowserCast() {
     // reaction time.
     MARK_JITTER: 0.08,
     LAZY_AUDIO_PROGRESS_INTERVAL: 100,
+    SEEK_TRIGGER_DELAY: 200,
     ACTIVE_CELL_CLASS: "browsercast-active-cell"
   });
 
@@ -711,6 +729,9 @@ function BrowserCast() {
     self._activeCells.forEach(function(cellOpts) {
       cellOpts.cellDom.addClass(self.ACTIVE_CELL_CLASS);
     });
+    if (activeCells.length) {
+      IPython.notebook.select(IPython.notebook.find_cell_index(activeCells[0].cell));
+    }
   };
 
   self.updateActiveCells = function() {
@@ -845,6 +866,21 @@ function BrowserCast() {
         self.triggerAudioPaused();
       });
     });
+    self.audio.on("seeking", function() {
+      self.audio.on("timeupdate", self._triggerLazyAudioProgress);
+    });
+    self.audio.on("seeked", function() {
+      self.audio.off("timeupdate", self._triggerLazyAudioProgress);
+      if (self._seekDoneTimeout)
+        clearTimeout(self._seekDoneTimeout);
+      self._seekDoneTimeout = setTimeout(self._seekDoneTrigger, self.SEEK_TRIGGER_DELAY);
+    });
+  };
+
+  self._seekDoneTimeout = null;
+  self._seekDoneTrigger = function() {
+    self.events.trigger("seekDone");
+    self._seekDoneTimeout = null;
   };
 
   self._lastAudioPaused = null;
