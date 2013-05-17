@@ -48,11 +48,11 @@
   margin-bottom: -7px;
   height: 20px;
 }
+.browsercast-controls .ui-button.bc-corner-none .ui-icon {
+  margin-left: -11px;
+}
 .browsercast-controls .ui-button.jump-to-time {
   width: 27px;
-}
-.browsercast-controls .ui-button .ui-icon-check {
-  margin-left: -10px;
 }
 .browsercast-controls .input-container {
   position: relative;
