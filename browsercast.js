@@ -168,13 +168,21 @@ function BrowserCastEditing() {
     self.browsercast.updateActiveCells();
     self.browsercast.events.on("lazyAudioProgress", self.onLazyAudioProgress);
     self.browsercast.events.on("cellTimingInputChange", self.recalculateTimings);
+    self.browsercast.events.on("audioPaused", self.onAudioPaused);
   };
 
   self._deactivate = function() {
     self.pickAudioBtn.remove();
     self.pickAudioBtn = null;
+    self.browsercast.events.off("audioPaused", self.recalculateTimings);
     self.browsercast.events.off("cellTimingInputChange", self.recalculateTimings);
-    self.browsercast.events.off("lazyAudioProgress", self.onLazyAudioProgress);
+    self.browsercast.events.off("lazyAudioProgress", self.onAudioPaused);
+  };
+
+  self.onAudioPaused = function(event, paused) {
+    if (paused) {
+      self.recalculateTimings();
+    }
   };
 
   self.onLazyAudioProgress = function(event, curTime) {
@@ -626,6 +634,7 @@ function BrowserCast() {
     self.events.on("cellTimingInputChange", debounce(function() {
       IPython.notebook.save_notebook();
     }, 250));
+    self.events.on("audioPaused", self.updateLazyAudioProgress);
 
     // Browser keyboard shortcuts
     $(document).keydown(function (event) {
@@ -811,9 +820,18 @@ function BrowserCast() {
     });
     "playing pause ended seeked abort".split(" ").forEach(function(evName) {
       self.audio.on(evName, function() {
-        self.updateLazyAudioProgress();
+        self.triggerAudioPaused();
       });
     });
+  };
+
+  self._lastAudioPaused = null;
+  self.triggerAudioPaused = function() {
+    var paused = self.audio.paused();
+    if (paused === self._lastAudioPaused)
+      return;
+    self._lastAudioPaused = paused;
+    self.events.trigger("audioPaused", [paused]);
   };
 
   self._lazyAudioProgressInterval = null;
