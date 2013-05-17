@@ -112,9 +112,12 @@ function BaseBrowserCastMode() {
   self.activate = function(browsercast) {
     self.browsercast = browsercast;
     self._activate();
+    if (self._didLoadFromNotebook)
+      self._activateAfterNotebook();
   };
 
   self._activate = function() {};
+  self._activateAfterNotebook = function() {};
 
   self.deactivate = function() {
     self._deactivate();
@@ -123,10 +126,15 @@ function BaseBrowserCastMode() {
 
   self._deactivate = function() {};
 
-  self.loadFromNotebook = function() {
+  self.loadFromNotebook = function(browsercast) {
     if (self._didLoadFromNotebook)
       return;
+    var oldBrowsercast = self.browsercast;
+    self.browsercast = browsercast;
     self._loadFromNotebook();
+    self.browsercast = oldBrowsercast;
+    if (self.browsercast)
+      self._activateAfterNotebook();
     self._didLoadFromNotebook = true;
   };
 
@@ -160,11 +168,6 @@ function BrowserCastEditing() {
     self.pickAudioBtn.click(self.pickAudioURL);
     self.browsercast.audioContainer.after(self.pickAudioBtn);
 
-    // Setup the cell timings
-    if (self._didLoadFromNotebook) {
-      self._loadFromNotebook();
-    }
-    
     self.browsercast.updateActiveCells();
     self.browsercast.events.on("lazyAudioProgress", self.onLazyAudioProgress);
     self.browsercast.events.on("cellTimingInputChange", self.recalculateTimings);
@@ -177,6 +180,10 @@ function BrowserCastEditing() {
     self.browsercast.events.off("audioPaused", self.recalculateTimings);
     self.browsercast.events.off("cellTimingInputChange", self.recalculateTimings);
     self.browsercast.events.off("lazyAudioProgress", self.onAudioPaused);
+  };
+
+  self._loadFromNotebook = function() {
+    self.recalculateTimings();
   };
 
   self.onAudioPaused = function(event, paused) {
@@ -362,14 +369,18 @@ function BrowserCastPlayback() {
   var self = BaseBrowserCastMode();
 
   self._activate = function(browsercast) {
-    self.audio = self.browsercast.audio;
-    self.activatePopcorn();
     $(".browsercast-start-time-input").attr("disabled", true);
   };
 
+  self._activateAfterNotebook = function() {
+    self.audio = self.browsercast.audio;
+    self.activatePopcorn();
+  }
+
   self._deactivate = function() {
     $(".browsercast-start-time-input").attr("disabled", false);
-    self.deactivatePopcorn();
+    if (self.audio)
+      self.deactivatePopcorn();
     self.audio = null;
   };
 
@@ -573,7 +584,6 @@ function BrowserCast() {
   self.setup = function() {
     self.injectHTML();
     self.setupCellControlsManager();
-    self.updateMode();
     self.setupEvents();
   };
 
@@ -581,10 +591,8 @@ function BrowserCast() {
     self.view = $(
       "<div class='browsercast-container'>" +
         "<div class='mode-select'>" +
-          "<input type='radio' id='browsercast-mode-edit' name='mode' value='editing' checked />" +
-          "<label for='browsercast-mode-edit'>Editing</label>" +
-          "<input type='radio' id='browsercast-mode-playback' name='mode' value='playback' />" +
-          "<label for='browsercast-mode-playback'>Playback</label>" +
+          "<input type='checkbox' id='browsercast-mode-edit' name='mode' value'editing' />" +
+          "<label for='browsercast-mode-edit'>Edit</label>" +
         "</div>" +
         "<div class='audio-container'>" +
           "<span class='state state-empty'>No audio loaded&hellip;</span>" +
@@ -595,7 +603,11 @@ function BrowserCast() {
       "</div>"
     );
     $("body").append(self.view);
-    self.view.find(".mode-select").buttonset();
+    self.view.find("#browsercast-mode-edit").button({
+      icons: {
+        primary: "ui-icon-bullet"
+      }
+    });
     self.audioContainer = self.view.find(".audio-container");
     self.audioContainer.attr("id", "browsercast-audio-container")
     self.setAudioURL();
@@ -661,12 +673,20 @@ function BrowserCast() {
     });
   };
 
+  self.initializeMode = function() {
+    self.setMode("editing");
+    self.activeMode.loadFromNotebook(self);
+    self.updateMode();
+    self.activeMode.loadFromNotebook(self);
+  };
+
   self.updateMode = function() {
-    var name = self.view.find("input[name=mode]:checked").val();
-    self.setMode(name);
-  }
+    var editing = self.view.find(".mode-select input:checked").val();
+    self.setMode(editing? "editing" : "playback");
+  };
 
   self.setMode = function(name) {
+    log("setting mode:", name);
     var newMode = self.modes[name];
     if (!newMode) {
       alert("Error: invalid mode: " + name);
@@ -677,8 +697,6 @@ function BrowserCast() {
     if (self.activeMode)
       self.activeMode.deactivate();
     self.activeMode = newMode;
-    if (self._didLoadFromNotebook)
-      self.activeMode.loadFromNotebook();
     self.activeMode.activate(self);
     toggleClassPrefix($(document.body), "browsercast-mode-",
                       "browsercast-mode-" + name);
@@ -741,13 +759,13 @@ function BrowserCast() {
       return;
     var browsercast = IPython.notebook.metadata.browsercast || {};
     self.setAudioURL(browsercast.audioURL);
-    self.activeMode.loadFromNotebook();
     self._didLoadFromNotebook = true;
     var cells = IPython.notebook.get_cells();
     for (var i = 0; i < cells.length; i += 1) {
       cells[i]._browsercastDidTriggerNew = true;
     };
     self.events.trigger("notebookLoaded");
+    self.initializeMode();
   };
 
   self.moveSelection = function(delta) {

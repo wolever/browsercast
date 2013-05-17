@@ -13,19 +13,13 @@
   display: inline-block;
   margin-right: 5px;
 }
-.browsercast-container > .ui-buttonset {
-  margin-right: 8px;
-}
-.browsercast-container > .ui-buttonset > * {
+.browsercast-container .mode-select .ui-button {
   height: 28px;
 }
 .browsercast-container .ui-button-text {
   padding-top: 7px;
   padding-right: 12px;
-}
-.browsercast-container .ui-button-text-icon-primary .ui-button-text {
   margin-left: 16px;
-  padding-top: 6px;
 }
 .browsercast-container .audio-container > * {
   display: none;
