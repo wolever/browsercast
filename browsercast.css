@@ -86,6 +86,9 @@
 .browsercast-cell-inactive {
   opacity: 0.5;
 }
+.browsercast-mode-playback .duration-input-container {
+  display: none;
+}
 .browsercast-mode-editing .browsercast-cell-hidden,
 .browsercast-mode-editing .browsercast-cell-inactive {
   display: block;

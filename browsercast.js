@@ -364,9 +364,11 @@ function BrowserCastPlayback() {
   self._activate = function(browsercast) {
     self.audio = self.browsercast.audio;
     self.activatePopcorn();
+    $(".browsercast-start-time-input").attr("disabled", true);
   };
 
   self._deactivate = function() {
+    $(".browsercast-start-time-input").attr("disabled", false);
     self.deactivatePopcorn();
     self.audio = null;
   };
