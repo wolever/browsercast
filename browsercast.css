@@ -89,6 +89,7 @@
 .browsercast-mode-editing .browsercast-cell-hidden,
 .browsercast-mode-editing .browsercast-cell-inactive {
   display: block;
+  opacity: 1.0;
 }
 .ui-button.bc-button-flushleft {
   margin-left: -1px;
