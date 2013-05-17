@@ -905,7 +905,7 @@ function BrowserCast() {
     var cellOpts = BrowserCastCellOptions.getForCell(self, cell);
     var curTime = self.getCurrentTime();
     var duration = curTime - (cellOpts.time || 0);
-    if (self.audio.playing()) {
+    if (!self.audio.paused()) {
       duration -= self.MARK_JITTER;
     }
     duration = Math.max(duration, 0);
