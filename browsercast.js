@@ -205,7 +205,6 @@ function BrowserCastEditing() {
   self.recalculateTimings = function() {
     log("Recalculating times...");
     var audio = self.browsercast.audio;
-    var audioEnd = audio.duration() + 1;
     var cells = IPython.notebook.get_cells();
     var lastOpts = null;
     var curTime = 0;
@@ -266,14 +265,6 @@ function BrowserCastEditing() {
       cellOpts.time = Math.max(lastOpts? lastOpts.time : 0, curTime + timeOffset);
       cellOpts.meta.time = cellOpts.time;
       cellOpts.timeInput.val(timeToStr(cellOpts.time));
-      audio.browsercastCell("bc-" + cellOpts.cellID, {
-        start: cellOpts.time - 0.001,
-        end: audioEnd,
-        cellIndex: i,
-        cellOpts: cellOpts,
-        cellDom: cellOpts.cellDom
-      });
-      console.log("i:", i);
       lastOpts = cellOpts;
       timeOffset += curOffset;
     }
@@ -292,7 +283,6 @@ function BrowserCastEditing() {
 function BrowserCastPopcornPlugin(browsercast) {
   var self = {
     browsercast: browsercast,
-    activeCellStack: []
   };
 
   // General stuff
@@ -302,22 +292,24 @@ function BrowserCastPopcornPlugin(browsercast) {
     toggleClassPrefix(cellDom, self.cellClassPrefix, newClass);
   };
 
-  self.activeCellClass = "browsercast-active-cell";
   self.updateActiveCells = function(popcorn) {
     // todo: this could be sped up quite a bit...
     var curTime = self.browsercast.getCurrentTime();
     var trackEvents = popcorn.data.trackEvents.byStart;
-    $("." + self.activeCellClass).removeClass(self.activeCellClass);
     var lastTrackEvent = null;
+    var newActiveCells = [];
     for (var i = trackEvents.length - 1; i >= 0; i -= 1) {
       var trackEvent = trackEvents[i];
+      if (!trackEvent.cellOpts)
+        continue;
       if (lastTrackEvent && trackEvent.start !== lastTrackEvent.start)
         break;
       if (trackEvent.start <= curTime) {
         lastTrackEvent = trackEvent;
-        trackEvent.cellDom.addClass(self.activeCellClass);
+        newActiveCells.push(trackEvent.cellOpts);
       }
-    };
+    }
+    self.browsercast.setActiveCells(newActiveCells);
   };
 
   // Popcorn plugin stuff
@@ -356,12 +348,36 @@ function BrowserCastPlayback() {
 
   self._activate = function(browsercast) {
     self.audio = self.browsercast.audio;
+    self.activatePopcorn();
   };
 
   self._deactivate = function() {
+    self.deactivatePopcorn();
     self.audio = null;
   };
 
+  self.activatePopcorn = function() {
+    if (!Popcorn.registryByName["browsercastCell"])
+      Popcorn.plugin("browsercastCell", BrowserCastPopcornPlugin(browsercast));
+    var cells = IPython.notebook.get_cells();
+    var audioEnd = self.audio.duration() + 1;
+    cells.forEach(function(cell, i) {
+      var cellOpts = BrowserCastCellOptions.getForCell(self.browsercast, cell);
+      self.audio.browsercastCell("bc-" + cellOpts.cellID, {
+        start: cellOpts.time - 0.001,
+        end: audioEnd,
+        cellIndex: i,
+        cellOpts: cellOpts,
+        cellDom: cellOpts.cellDom
+      });
+    });
+  };
+
+  self.deactivatePopcorn = function() {
+    var curActive = self.browsercast.getActiveCells();
+    self.audio.removePlugin("browsercastCell");
+    self.browsercast.setActiveCells(curActive);
+  };
   return self;
 }
 
@@ -488,7 +504,8 @@ function BrowserCast() {
     },
     // New marks will be offset backwards by MARK_JITTER to compensate for
     // reaction time.
-    MARK_JITTER: 0.08
+    MARK_JITTER: 0.08,
+    ACTIVE_CELL_CLASS: "browsercast-active-cell"
   });
 
   self.keyboardShortcuts = {
@@ -537,15 +554,10 @@ function BrowserCast() {
   };
 
   self.setup = function() {
-    self.setupPopcorn();
     self.injectHTML();
     self.setupCellControlsManager();
     self.updateMode();
     self.setupEvents();
-  };
-
-  self.setupPopcorn = function() {
-    Popcorn.plugin("browsercastCell", BrowserCastPopcornPlugin(self));
   };
 
   self.injectHTML = function() {
@@ -652,6 +664,21 @@ function BrowserCast() {
     self.activeMode.activate(self);
     toggleClassPrefix($(document.body), "browsercast-mode-",
                       "browsercast-mode-" + name);
+  };
+
+  self._activeCells = [];
+  self.setActiveCells = function(activeCells) {
+    self._activeCells.forEach(function(cellOpts) {
+      cellOpts.cellDom.removeClass(self.ACTIVE_CELL_CLASS);
+    });
+    self._activeCells = activeCells;
+    self._activeCells.forEach(function(cellOpts) {
+      cellOpts.cellDom.addClass(self.ACTIVE_CELL_CLASS);
+    });
+  };
+
+  self.getActiveCells = function() {
+    return self._activeCells;
   };
 
   self.showLog = function(msg) {
