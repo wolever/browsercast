@@ -500,7 +500,7 @@ function BrowserCastCellControlsManager(browsercast) {
         alert("Error: no BrowserCastCellControlsManager handler for " + action);
         return;
       }
-      handler(cell);
+      handler(cell, event);
       event.preventDefault();
       event.stopImmediatePropagation();
     });
@@ -513,8 +513,22 @@ function BrowserCastCellControlsManager(browsercast) {
     self.browsercast.setActiveCells([cellOpts]);
   };
 
-  self.onCellClick_mark = function(cell) {
+  self.onCellClick_mark = function(cell, event) {
+    var lastTop = $(event.target).offset().top;
     self.browsercast.markCellEnd(cell);
+    var nowActive = self.browsercast.getActiveCells()[0];
+    if (!nowActive)
+      return;
+    var markBtn = nowActive.cellDom.find("[data-action=mark]");
+    var newTop = markBtn.offset().top;
+    if (newTop == 0) {
+      // Will happen if the element is invisible
+      return;
+    }
+    var nb = $("#notebook");
+    nb.animate({
+      scrollTop: nb.scrollTop() + (newTop - lastTop)
+    });
   };
 
   self.onCellClick_pause = function(cell) {
