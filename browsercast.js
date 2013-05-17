@@ -198,6 +198,10 @@ function BrowserCastEditing() {
   };
 
   self.onLazyAudioProgress = function(event, curTime) {
+    if (self.browsercast.audioSeeking) {
+      self.browsercast.updateActiveCells();
+      return;
+    }
     var allActive = self.browsercast.getActiveCells();
     var activeOpts = allActive[allActive.length - 1];
     if (!activeOpts)
@@ -246,7 +250,6 @@ function BrowserCastEditing() {
    */
   self.recalculateTimings = function() {
     log("Recalculating times...");
-    var audio = self.browsercast.audio;
     var cells = IPython.notebook.get_cells();
     var lastOpts = null;
     var curTime = 0;
@@ -550,7 +553,6 @@ function BrowserCast() {
     // reaction time.
     MARK_JITTER: 0.08,
     LAZY_AUDIO_PROGRESS_INTERVAL: 100,
-    SEEK_TRIGGER_DELAY: 200,
     ACTIVE_CELL_CLASS: "browsercast-active-cell"
   });
 
@@ -722,6 +724,11 @@ function BrowserCast() {
 
   self._activeCells = [];
   self.setActiveCells = function(activeCells) {
+    if (self._activeCells.length == activeCells.length &&
+        self._activeCells[0] === activeCells[0] &&
+        activeCells.length < 2) {
+      return;
+    }
     self._activeCells.forEach(function(cellOpts) {
       cellOpts.cellDom.removeClass(self.ACTIVE_CELL_CLASS);
     });
@@ -740,17 +747,29 @@ function BrowserCast() {
       return;
     }
 
-    // todo: this could be sped up quite a bit...
+    // TODO: this could be sped up quite a bit, but because the Notebook
+    // doesn't emit events when cells are deleted, it's kind of tricky...
+    // Once we can cache cells (so, ex, ``get_cells()`` can be an O(1)
+    // operation), this can be made quite a bit faster.
+    // For now: this little performance hack:
+    if (!self.__cells) {
+      self.__cells = IPython.notebook.get_cells();
+    }
+    if (self.__cellsTimeout)
+      clearTimeout(self.__cellsTimeout);
+    self.__cellsTimeout = setTimeout(function() {
+      self.__cells = null;
+    }, 300);
+    var cells = self.__cells;
     var curTime = self.getCurrentTime();
-    var cells = IPython.notebook.get_cells();
     var lastCell = null;
     var newActiveCell = null;
-    log("Updating... Cur time:", curTime);
+    // log("Updating... Cur time:", curTime);
     for (var i = cells.length - 1; i >= 0; i -= 1) {
       var cellOpts = BrowserCastCellOptions.getForCell(self, cells[i]);
       if (lastCell && cellOpts.time !== lastCell.time)
         break;
-      log("curcell time:", cellOpts.time);
+      // log("curcell time:", cellOpts.time);
       if (cellOpts.time <= curTime + 0.001) {
         lastCell = cellOpts;
         newActiveCell = cellOpts;
@@ -867,13 +886,12 @@ function BrowserCast() {
       });
     });
     self.audio.on("seeking", function() {
+      self.audioSeeking = true;
       self.audio.on("timeupdate", self._triggerLazyAudioProgress);
     });
     self.audio.on("seeked", function() {
       self.audio.off("timeupdate", self._triggerLazyAudioProgress);
-      if (self._seekDoneTimeout)
-        clearTimeout(self._seekDoneTimeout);
-      self._seekDoneTimeout = setTimeout(self._seekDoneTrigger, self.SEEK_TRIGGER_DELAY);
+      self.audioSeeking = false;
     });
   };
 
