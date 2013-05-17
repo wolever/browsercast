@@ -12,23 +12,16 @@
         margin-right: 5px;
     }
 
-    > .ui-buttonset {
-        margin-right: 8px;
-        > * {
-            height: 28px;
-        }
-    }
-
     /* No idea why I need to fixup these jQuery UI styles... */
+
+    .mode-select .ui-button {
+        height: 28px;
+    }
 
     .ui-button-text {
         padding-top: 7px;
         padding-right: 12px;
-    }
-
-    .ui-button-text-icon-primary .ui-button-text {
         margin-left: 16px;
-        padding-top: 6px;
     }
 
     .audio-container {
@@ -59,13 +52,13 @@
     .ui-button {
         margin-bottom: -7px;
         height: 20px;
-            
-        &.jump-to-time {
-            width: 27px;
+
+        &.bc-corner-none .ui-icon {
+            margin-left: -11px;
         }
 
-        .ui-icon-check {
-            margin-left: -10px;
+        &.jump-to-time {
+            width: 27px;
         }
     }
 
@@ -116,10 +109,17 @@
     opacity: 0.5;
 }
 
+.browsercast-mode-playback {
+    .duration-input-container {
+        display: none;
+    }
+}
+
 .browsercast-mode-editing {
     .browsercast-cell-hidden,
     .browsercast-cell-inactive {
         display: block;
+        opacity: 1.0;
     }
 }
 

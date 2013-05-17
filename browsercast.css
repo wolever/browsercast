@@ -13,19 +13,13 @@
   display: inline-block;
   margin-right: 5px;
 }
-.browsercast-container > .ui-buttonset {
-  margin-right: 8px;
-}
-.browsercast-container > .ui-buttonset > * {
+.browsercast-container .mode-select .ui-button {
   height: 28px;
 }
 .browsercast-container .ui-button-text {
   padding-top: 7px;
   padding-right: 12px;
-}
-.browsercast-container .ui-button-text-icon-primary .ui-button-text {
   margin-left: 16px;
-  padding-top: 6px;
 }
 .browsercast-container .audio-container > * {
   display: none;
@@ -48,11 +42,11 @@
   margin-bottom: -7px;
   height: 20px;
 }
+.browsercast-controls .ui-button.bc-corner-none .ui-icon {
+  margin-left: -11px;
+}
 .browsercast-controls .ui-button.jump-to-time {
   width: 27px;
-}
-.browsercast-controls .ui-button .ui-icon-check {
-  margin-left: -10px;
 }
 .browsercast-controls .input-container {
   position: relative;
@@ -86,9 +80,13 @@
 .browsercast-cell-inactive {
   opacity: 0.5;
 }
+.browsercast-mode-playback .duration-input-container {
+  display: none;
+}
 .browsercast-mode-editing .browsercast-cell-hidden,
 .browsercast-mode-editing .browsercast-cell-inactive {
   display: block;
+  opacity: 1.0;
 }
 .ui-button.bc-button-flushleft {
   margin-left: -1px;
