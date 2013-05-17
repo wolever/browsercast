@@ -522,7 +522,7 @@ function BrowserCastCellControlsManager(browsercast) {
     var markBtn = nowActive.cellDom.find("[data-action=mark]");
     var newTop = markBtn.offset().top;
     if (newTop == 0) {
-      // Will happen if the element is invisible
+      // Will happen if the element is invisible (ex, the last one)
       return;
     }
     var nb = $("#notebook");
