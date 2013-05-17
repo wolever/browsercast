@@ -169,6 +169,7 @@ function BrowserCastEditing() {
     self.browsercast.audioContainer.after(self.pickAudioBtn);
 
     self.browsercast.updateActiveCells();
+    self.onAudioPaused(null, self.browsercast.audio.paused());
     self.browsercast.events.on("lazyAudioProgress", self.onLazyAudioProgress);
     self.browsercast.events.on("cellTimingInputChange", self.recalculateTimings);
     self.browsercast.events.on("audioPaused", self.onAudioPaused);
@@ -177,9 +178,9 @@ function BrowserCastEditing() {
   self._deactivate = function() {
     self.pickAudioBtn.remove();
     self.pickAudioBtn = null;
-    self.browsercast.events.off("audioPaused", self.recalculateTimings);
+    self.browsercast.events.off("audioPaused", self.onAudioPaused);
     self.browsercast.events.off("cellTimingInputChange", self.recalculateTimings);
-    self.browsercast.events.off("lazyAudioProgress", self.onAudioPaused);
+    self.browsercast.events.off("lazyAudioProgress", self.onLazyAudioProgress);
   };
 
   self._loadFromNotebook = function() {
@@ -200,7 +201,6 @@ function BrowserCastEditing() {
     if (!activeOpts)
       return;
     var offset = curTime - activeOpts.time;
-    log(curTime, activeOpts.time, offset);
     activeOpts.durationInput.val(timeToStr(offset));
   };
 
@@ -444,11 +444,11 @@ function BrowserCastCellControlsManager(browsercast) {
     var controlsWidth = cellOpts.controls.children().width();
     var elemPaddingLeft = 5;
     elem.css({
-      "padding-left": (controlsWidth + elemPaddingLeft) + ".px",
-      "min-height": cellOpts.controls.children().height() + 10 + ".px"
+      "padding-left": (controlsWidth + elemPaddingLeft) + "px",
+      "min-height": cellOpts.controls.children().height() + 10 + "px"
     });
     cellOpts.controls.css({
-      "margin-left": -controlsWidth + ".px",
+      "margin-left": -controlsWidth + "px",
     });
   };
 
