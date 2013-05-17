@@ -142,8 +142,8 @@ function BrowserCastEditing() {
     m: {
       help: "Mark current cell",
       action: function() {
-        var cell = IPython.notebook.get_selected_cell();
-        self.browsercast.markCellEnd(cell);
+        var active = self.browsercast.getActiveCells()[0];
+        self.browsercast.markCellEnd(active.cell);
       }
     }
   };
