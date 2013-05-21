@@ -851,14 +851,15 @@ function BrowserCast() {
     var dialog = $(
       "<div class='browsercast-welcome'>" +
         "<p>" +
-          "<strong>Welcome to BrowserCast!</strong> Click " +
-          "the <span class='fakebtn'>Edit</span> "+
-          "button in the bottom left corner to get started." +
-        "</p>" +
+          "<strong>Welcome to BrowserCast!</strong> To get started:<ol>" +
+          "<li>Click the <span class='fakebtn' data-target='.browsercast-container .mode-select'>Edit</span> button in the bottom left.</li>" +
+          "<li>Click the <span class='fakebtn' data-target='.browsercast-container .set-audio-url'>Pick Audio URL</span> button to select an audio file.</li>" +
+          "<li><span class='controls-img'></span>Use the <em>jump</em>, <em>play/pause</em>, and <em>mark</em> buttons to create your BrowserCast!</li>" +
+        "</ol></p>" +
       "</div>"
     );
     dialog.find(".fakebtn").click(function() {
-      var modeSelect = $(".browsercast-container .mode-select");
+      var modeSelect = $($(this).attr("data-target"));
       modeSelect
         .stop(true, true)
         .animate({
