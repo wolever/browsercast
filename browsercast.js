@@ -192,7 +192,7 @@ function BrowserCastEditing() {
     self.browsercast.audioContainer.after(self.pickAudioBtn);
 
     self.browsercast.updateActiveCells();
-    self.onAudioPaused(null, self.browsercast.audio.paused());
+    self.onAudioPaused(null);
   };
 
   self._deactivate = function() {
@@ -204,9 +204,13 @@ function BrowserCastEditing() {
     self.recalculateTimings();
   };
 
-  self.onAudioPaused = function(event, paused) {
-    toggleClassPrefix($(".pause-icon"), "ui-icon-",
+  self.onAudioPaused = function(event) {
+    var audio = self.browsercast.audio;
+    var paused = audio && audio.paused();
+    var pauseIcon = $(".pause-icon");
+    toggleClassPrefix(pauseIcon, "ui-icon-",
                       "ui-icon-" + (paused? "play" : "pause"));
+    pauseIcon[(audio? "remove" : "add") + "Class"]("disabled");
   };
 
   self.onLazyAudioProgress = function(event, curTime) {
@@ -419,6 +423,8 @@ function BrowserCastPlayback() {
   };
 
   self.activatePopcorn = function() {
+    if (!self.audio)
+      return;
     if (!Popcorn.registryByName["browsercastCell"])
       Popcorn.plugin("browsercastCell", BrowserCastPopcornPlugin(browsercast));
     var cells = IPython.notebook.get_cells();
@@ -827,7 +833,10 @@ function BrowserCast() {
   self.loadFromNotebook = function() {
     if (self._didLoadFromNotebook)
       return;
-    var browsercast = IPython.notebook.metadata.browsercast || {};
+    var browsercast = IPython.notebook.metadata.browsercast;
+    if (!browsercast)
+      self.showWelcomeMessage();
+    browsercast = browsercast || {};
     self.setAudioURL(browsercast.audioURL);
     self._didLoadFromNotebook = true;
     var cells = IPython.notebook.get_cells();
@@ -836,6 +845,36 @@ function BrowserCast() {
     };
     self.events.trigger("notebookLoaded");
     self.initializeMode();
+  };
+
+  self.showWelcomeMessage = function() {
+    var dialog = $(
+      "<div class='browsercast-welcome'>" +
+        "<p>" +
+          "<strong>Welcome to BrowserCast!</strong> Click " +
+          "the <span class='fakebtn'>Edit</span> "+
+          "button in the bottom left corner to get started." +
+        "</p>" +
+      "</div>"
+    );
+    dialog.find(".fakebtn").click(function() {
+      var modeSelect = $(".browsercast-container .mode-select");
+      modeSelect
+        .stop(true, true)
+        .animate({
+          marginTop: -30,
+          marginLeft: 30
+        }, "fast")
+        .animate({
+          marginTop: 0,
+          marginLeft: 0
+        }, "fast");
+    });
+
+    dialog.dialog({
+      title: "Welcome to BrowserCast!"
+    });
+    dialog.show();
   };
 
   self.moveSelection = function(delta) {
