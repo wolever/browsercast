@@ -6,12 +6,12 @@ cd "`dirname "$0"`"
 
 bookmarklet="$(./mkbookmarklet "$1")"
 echo "
-    <p>Bookmarklet: <a href='$bookmarklet'>Activate iPython Notebook lecture mode</a></p>
+    <p>Bookmarklet: <a href='$bookmarklet'>Activate BrowserCast</a></p>
     <p>To use:
         <ol>
             <li><a href='http://marklets.com/FAQ.aspx#howDoIAddABookmarkletToMyBrowser'>Add the bookmarklet to your browser</a>.</li>
             <li>Open up an IPython notebook.</li>
-            <li>Run the bookmarklet. The lecture controls should appear in the bottom left corner of the screen.</li>
+            <li>Run the bookmarklet. The BrowserCast controls should appear in the bottom left corner of the screen.</li>
             <li>Click 'Pick audio URL' and put in a URL for an audio file. Here are some example files:
                 <ul>
                     <li><tt>$1examples/example.mp3</tt></li>
