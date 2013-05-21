@@ -172,7 +172,6 @@ function BrowserCastEditing() {
     self.onAudioPaused(null, self.browsercast.audio.paused());
     self.browsercast.events.on("lazyAudioProgress", self.onLazyAudioProgress);
     self.browsercast.events.on("cellTimingInputChange", self.recalculateTimings);
-    self.browsercast.events.on("seekDone", self.recalculateTimings);
     self.browsercast.events.on("audioPaused", self.onAudioPaused);
   };
 
@@ -180,7 +179,6 @@ function BrowserCastEditing() {
     self.pickAudioBtn.remove();
     self.pickAudioBtn = null;
     self.browsercast.events.off("audioPaused", self.onAudioPaused);
-    self.browsercast.events.off("seekDone", self.recalculateTimings);
     self.browsercast.events.off("cellTimingInputChange", self.recalculateTimings);
     self.browsercast.events.off("lazyAudioProgress", self.onLazyAudioProgress);
   };
@@ -893,12 +891,6 @@ function BrowserCast() {
       self.audio.off("timeupdate", self._triggerLazyAudioProgress);
       self.audioSeeking = false;
     });
-  };
-
-  self._seekDoneTimeout = null;
-  self._seekDoneTrigger = function() {
-    self.events.trigger("seekDone");
-    self._seekDoneTimeout = null;
   };
 
   self._lastAudioPaused = null;
