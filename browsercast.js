@@ -450,7 +450,7 @@ function BrowserCastPlayback() {
     if (!activeCells.length)
       return;
     var nb = $("#notebook");
-    nb.animate({
+    nb.stop(true).animate({
       scrollTop: nb.scrollTop() + activeCells[0].cellDom.position().top
     });
   }
@@ -577,7 +577,7 @@ function BrowserCastCellControlsManager(browsercast) {
       return;
     }
     var nb = $("#notebook");
-    nb.animate({
+    nb.stop(true).animate({
       scrollTop: nb.scrollTop() + (newTop - lastTop)
     });
   };
