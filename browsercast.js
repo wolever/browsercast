@@ -407,6 +407,10 @@ function BrowserCastPopcornPlugin(browsercast) {
 function BrowserCastPlayback() {
   var self = BaseBrowserCastMode();
 
+  self.bindBrowsercastEvents = {
+    "activeCellsChanged": "onActiveCellsChanged"
+  };
+
   self._activate = function(browsercast) {
     $(".browsercast-start-time-input").attr("disabled", true);
   };
@@ -441,6 +445,15 @@ function BrowserCastPlayback() {
       });
     });
   };
+
+  self.onActiveCellsChanged = function(event, _, activeCells) {
+    if (!activeCells.length)
+      return;
+    var nb = $("#notebook");
+    nb.animate({
+      scrollTop: nb.scrollTop() + activeCells[0].cellDom.position().top
+    });
+  }
 
   self.deactivatePopcorn = function() {
     self.audio.removePlugin("browsercastCell");
