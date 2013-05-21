@@ -30,6 +30,12 @@
 .browsercast-pick-audio-url input {
   width: 100%;
 }
+.browsercast-pick-audio-url .hints li {
+  margin-left: 18px;
+}
+.browsercast-pick-audio-url .nbsp {
+  white-space: nowrap;
+}
 .browsercast-controls-container {
   position: relative;
 }

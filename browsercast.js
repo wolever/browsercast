@@ -227,10 +227,16 @@ function BrowserCastEditing() {
       "<div class='browsercast-pick-audio-url'>" +
         "<p>Enter a URL to use for audio:</p>" +
         "<input type='text' name='audio-url' />" +
+        "<p><strong>Hints</strong>: <ul class='hints'>" +
+          "<li>The <tt>ogg</tt> format has <a href='http://en.wikipedia.org/wiki/HTML5_Audio#.3CAudio.3E_element_format_support'>the best browser support</a>, and <a href='http://media.io/'>media.io</a> can be used to transcode <tt>mp3</tt> to <tt>ogg</tt>.</li>" +
+          "<li>If the audio file is in the same directory as the <tt>ipynb</tt> file, the url <tt>files/your_file_name.ogg</tt> can be used. <em>Note:</em> audio seeking will not work unless <tt>Tornado &gt;= 3.1dev2</tt> is installed. At the time of this writing, this version of Tornado hasn't been released. Install it directly from GitHub using: <tt class='nbsp'>pip install https://github.com/facebook/tornado/archive/2b054d4d.zip</tt></li>" +
+        "</ul></p>" +
       "</div>"
     );
     dialog.find("[name=audio-url]").val(self.browsercast.audioURL || "");
+    dialog.find("a").attr("target", "_blank");
     dialog.dialog({
+      minWidth: 615,
       buttons: {
         Save: function() {
           self.browsercast.setAudioURL($(this).find("[name=audio-url]").val());
@@ -240,6 +246,10 @@ function BrowserCastEditing() {
         Cancel: function() {
           $(this).dialog("close");
         }
+      }
+    }).on("keypress", function(event) {
+      if (event.keyCode == $.ui.keyCode.ENTER) {
+        $(this).parent().find("button:eq(0)").trigger("click");
       }
     });
   };
