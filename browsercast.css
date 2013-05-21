@@ -30,6 +30,12 @@
 .browsercast-pick-audio-url input {
   width: 100%;
 }
+.browsercast-pick-audio-url .hints li {
+  margin-left: 18px;
+}
+.browsercast-pick-audio-url .nbsp {
+  white-space: nowrap;
+}
 .browsercast-controls-container {
   position: relative;
 }
@@ -90,4 +96,28 @@
 }
 .ui-button.bc-button-flushleft {
   margin-left: -1px;
+}
+.browsercast-welcome ol li {
+  margin-left: 21px;
+  margin-bottom: 12px;
+  margin-top: 10px;
+}
+.browsercast-welcome .fakebtn {
+  white-space: nowrap;
+  padding: 3px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: default;
+}
+.browsercast-welcome .controls-img {
+  float: right;
+  background-image: url(browsercast-controls.png);
+  display: inline-block;
+  width: 148px;
+  height: 56px;
+  border: 1px solid #CCC;
+  margin-left: 10px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  box-shadow: 2px 2px 10px #888;
 }

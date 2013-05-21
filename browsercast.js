@@ -192,7 +192,7 @@ function BrowserCastEditing() {
     self.browsercast.audioContainer.after(self.pickAudioBtn);
 
     self.browsercast.updateActiveCells();
-    self.onAudioPaused(null, self.browsercast.audio.paused());
+    self.onAudioPaused(null);
   };
 
   self._deactivate = function() {
@@ -204,9 +204,13 @@ function BrowserCastEditing() {
     self.recalculateTimings();
   };
 
-  self.onAudioPaused = function(event, paused) {
-    toggleClassPrefix($(".pause-icon"), "ui-icon-",
+  self.onAudioPaused = function(event) {
+    var audio = self.browsercast.audio;
+    var paused = audio && audio.paused();
+    var pauseIcon = $(".pause-icon");
+    toggleClassPrefix(pauseIcon, "ui-icon-",
                       "ui-icon-" + (paused? "play" : "pause"));
+    pauseIcon[(audio? "remove" : "add") + "Class"]("disabled");
   };
 
   self.onLazyAudioProgress = function(event, curTime) {
@@ -227,10 +231,17 @@ function BrowserCastEditing() {
       "<div class='browsercast-pick-audio-url'>" +
         "<p>Enter a URL to use for audio:</p>" +
         "<input type='text' name='audio-url' />" +
+        "<p><strong>Hints</strong>: <ul class='hints'>" +
+          "<li>The <tt>ogg</tt> format has <a href='http://en.wikipedia.org/wiki/HTML5_Audio#.3CAudio.3E_element_format_support'>the best browser support</a>, and <a href='http://media.io/'>media.io</a> can be used to transcode <tt>mp3</tt> to <tt>ogg</tt>.</li>" +
+          "<li>If the audio file is in the same directory as the <tt>ipynb</tt> file, the url <tt>files/your_file_name.ogg</tt> can be used. <em>Note:</em> audio seeking will not work unless <tt>Tornado &gt;= 3.1dev2</tt> is installed. At the time of this writing, this version of Tornado hasn't been released. Install it directly from GitHub using: <tt class='nbsp'>pip install https://github.com/facebook/tornado/archive/2dfbbd6173.zip</tt></li>" +
+          "<li>Need an example? Use <tt>http://wolever.github.io/browsercast/examples/example.ogg</tt></li>" +
+        "</ul></p>" +
       "</div>"
     );
     dialog.find("[name=audio-url]").val(self.browsercast.audioURL || "");
+    dialog.find("a").attr("target", "_blank");
     dialog.dialog({
+      minWidth: 615,
       buttons: {
         Save: function() {
           self.browsercast.setAudioURL($(this).find("[name=audio-url]").val());
@@ -240,6 +251,10 @@ function BrowserCastEditing() {
         Cancel: function() {
           $(this).dialog("close");
         }
+      }
+    }).on("keypress", function(event) {
+      if (event.keyCode == $.ui.keyCode.ENTER) {
+        $(this).parent().find("button:eq(0)").trigger("click");
       }
     });
   };
@@ -409,6 +424,8 @@ function BrowserCastPlayback() {
   };
 
   self.activatePopcorn = function() {
+    if (!self.audio)
+      return;
     if (!Popcorn.registryByName["browsercastCell"])
       Popcorn.plugin("browsercastCell", BrowserCastPopcornPlugin(browsercast));
     var cells = IPython.notebook.get_cells();
@@ -817,7 +834,10 @@ function BrowserCast() {
   self.loadFromNotebook = function() {
     if (self._didLoadFromNotebook)
       return;
-    var browsercast = IPython.notebook.metadata.browsercast || {};
+    var browsercast = IPython.notebook.metadata.browsercast;
+    if (!browsercast)
+      self.showWelcomeMessage();
+    browsercast = browsercast || {};
     self.setAudioURL(browsercast.audioURL);
     self._didLoadFromNotebook = true;
     var cells = IPython.notebook.get_cells();
@@ -826,6 +846,37 @@ function BrowserCast() {
     };
     self.events.trigger("notebookLoaded");
     self.initializeMode();
+  };
+
+  self.showWelcomeMessage = function() {
+    var dialog = $(
+      "<div class='browsercast-welcome'>" +
+        "<p>" +
+          "To get started:<ol>" +
+          "<li>Click the <span class='fakebtn' data-target='.browsercast-container .mode-select'>Edit</span> button in the bottom left.</li>" +
+          "<li>Click the <span class='fakebtn' data-target='.browsercast-container .set-audio-url'>Pick Audio URL</span> button to select an audio file.</li>" +
+          "<li><span class='controls-img'></span>Use the <em>jump</em>, <em>play/pause</em>, and <em>mark</em> buttons to create your BrowserCast!</li>" +
+        "</ol></p>" +
+      "</div>"
+    );
+    dialog.find(".fakebtn").click(function() {
+      var modeSelect = $($(this).attr("data-target"));
+      modeSelect
+        .stop(true, true)
+        .animate({
+          marginTop: -30,
+          marginLeft: 30
+        }, "fast")
+        .animate({
+          marginTop: 0,
+          marginLeft: 0
+        }, "fast");
+    });
+
+    dialog.dialog({
+      title: "Welcome to BrowserCast!"
+    });
+    dialog.show();
   };
 
   self.moveSelection = function(delta) {
