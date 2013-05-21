@@ -233,7 +233,7 @@ function BrowserCastEditing() {
         "<input type='text' name='audio-url' />" +
         "<p><strong>Hints</strong>: <ul class='hints'>" +
           "<li>The <tt>ogg</tt> format has <a href='http://en.wikipedia.org/wiki/HTML5_Audio#.3CAudio.3E_element_format_support'>the best browser support</a>, and <a href='http://media.io/'>media.io</a> can be used to transcode <tt>mp3</tt> to <tt>ogg</tt>.</li>" +
-          "<li>If the audio file is in the same directory as the <tt>ipynb</tt> file, the url <tt>files/your_file_name.ogg</tt> can be used. <em>Note:</em> audio seeking will not work unless <tt>Tornado &gt;= 3.1dev2</tt> is installed. At the time of this writing, this version of Tornado hasn't been released. Install it directly from GitHub using: <tt class='nbsp'>pip install https://github.com/wolever/tornado/archive/5b794deecc3.zip</tt></li>" +
+          "<li>If the audio file is in the same directory as the <tt>ipynb</tt> file, the url <tt>files/your_file_name.ogg</tt> can be used. <em>Note:</em> audio seeking will not work unless <tt>Tornado &gt;= 3.1dev2</tt> is installed. At the time of this writing, this version of Tornado hasn't been released. Install it directly from GitHub using: <tt class='nbsp'>pip install https://github.com/facebook/tornado/archive/2dfbbd6173.zip</tt></li>" +
           "<li>Need an example? Use <tt>http://wolever.github.io/browsercast/examples/example.ogg</tt></li>" +
         "</ul></p>" +
       "</div>"
