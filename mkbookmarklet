@@ -24,12 +24,12 @@ JS = """
         var s = document.createElement('link');
         s.setAttribute('rel', 'stylesheet');
         s.setAttribute('type', 'text/css');
-        s.setAttribute('href', prefix + css_url);
+        s.setAttribute('href', prefix + css_url + "?" + new Date());
         document.getElementsByTagName('body')[0].appendChild(s);
     });
     %(SCRIPTS)s.forEach(function(script_url) {
         var s = document.createElement('script');
-        s.setAttribute('src', prefix + script_url);
+        s.setAttribute('src', prefix + script_url + "?" + new Date());
         document.getElementsByTagName('body')[0].appendChild(s);
     });
 """ %{

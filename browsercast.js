@@ -1051,5 +1051,35 @@ function BrowserCast() {
   return self;
 };
 
-var browsercast = BrowserCast();
-browsercast.setup();
+
+(function(retryCount) {
+  if (window.browsercast) {
+    alert("BrowserCast is already active! Refresh the page to load it again.")
+    return;
+  }
+
+  if (!window.IPython) {
+    alert("BrowserCast needs to be run from an IPython notebook... But it " +
+          "doesn't look like we're inside a notebook right now. " +
+          "Open an IPython notebook and try again.");
+    return;
+  }
+
+  var loadStart = +new Date();
+  function setupBrowsercast() {
+    if ((new Date()) > loadStart + 3000) {
+      alert("It looks like there has been an error loading Popcorn.js. " +
+            "Please check Firebug/Developer Console to see if there was an " +
+            "error, and/or file a bug.");
+      return;
+    }
+    if (!window.Popcorn) {
+      setTimeout(setupBrowsercast, 100);
+      return;
+    }
+    window.browsercast = BrowserCast();
+    browsercast.setup();
+  }
+
+  setupBrowsercast();
+})();
