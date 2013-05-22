@@ -1,9 +1,6 @@
-``browsercast``
-===============
-
-An IPython Notebook plugin which allows IPython Notebook notebooks to be set to
-audio, creating a screencast-style presentation in the browser - a browser
-cast.
+BrowserCast is an IPython Notebook plugin which allows IPython Notebook
+notebooks to be set to audio, creating a screencast-style presentation in the
+browser - a browser cast.
 
 **Status**: BrowserCast is under active development, and should work well
 enough that you can use it to create useful presentations! It is currently
