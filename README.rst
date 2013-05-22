@@ -12,7 +12,8 @@ will change soon. To give it a try, see: http://wolever.github.io/browsercast/
 
 Traditional screencasts talking about BrowserCast:
 
-* Why is BrowserCast cool? http://youtu.be/mHlqLM7zGeo
+* Why is BrowserCast cool? http://youtu.be/OAIyHgbi5rM
+* Creating a presentation with BrowserCast: 
 * Old proof-of-concept demonstration: http://youtu.be/CYxZq4rZw0c
 
 FAQ
