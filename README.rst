@@ -2,14 +2,19 @@
 ===============
 
 An IPython Notebook plugin which allows IPython Notebook notebooks to be set to
-audio, creating a screencast-style presentation in the browser - a browser cast.
+audio, creating a screencast-style presentation in the browser - a browser
+cast.
 
 **Status**: BrowserCast is under active development, and should work well
 enough that you can use it to create useful presentations! It is currently
-implemented as a bookmarklet instead of a a "real" Notebook plugin, but that
+implemented as a bookmarklet instead of a "real" Notebook plugin, but that
 will change soon. To give it a try, see: http://wolever.github.io/browsercast/
 
-A quick demonstration, in the form of a screencast: http://youtu.be/CYxZq4rZw0c
+Traditional screencasts talking about BrowserCast:
+
+* Why is BrowserCast cool? http://youtu.be/OAIyHgbi5rM
+* Creating a presentation with BrowserCast: http://youtu.be/UhHRuPPFWtE
+* Old proof-of-concept demonstration: http://youtu.be/CYxZq4rZw0c
 
 FAQ
 ---
