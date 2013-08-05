@@ -495,11 +495,17 @@ function BrowserCastCellControlsManager(browsercast) {
     cellOpts.durationInput = cellOpts.controls.find(".browsercast-duration-input");
     var elem = $(cell.element);
     elem.prepend(cellOpts.controls);
+    /* Note: it's turning out to be fairly fiddly to calculate the correct
+     * size for the controls... So just hard code that for now. Sorry :(
     var controlsWidth = cellOpts.controls.children().width();
+    var controlsHeight = cellOpts.controls.children().height();
+    */
+    var controlsWidth = 160;
+    var controlsHeight = 53;
     var elemPaddingLeft = 5;
     elem.css({
       "padding-left": (controlsWidth + elemPaddingLeft) + "px",
-      "min-height": cellOpts.controls.children().height() + 10 + "px"
+      "min-height":  + controlsHeight + 10 + "px"
     });
     cellOpts.controls.css({
       "margin-left": -controlsWidth + "px",
