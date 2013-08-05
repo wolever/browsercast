@@ -376,7 +376,7 @@ function BrowserCastPopcornPlugin(browsercast) {
   // Popcorn plugin stuff
   self._setup = function(options){
     log("_setup", options.cellIndex);
-    self.toggleCellClass(options.cellDom, "hidden");
+    self.toggleCellClass(options.cellDom, "inactive");
     self.browsercast.updateActiveCells();
   };
 
