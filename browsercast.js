@@ -380,7 +380,7 @@ function BrowserCastPopcornPlugin(browsercast) {
     self.browsercast.updateActiveCells();
   };
 
-  self._teardown = function() {
+  self._teardown = function(options) {
     log("_teardown", options.cellIndex);
     self.browsercast.updateActiveCells();
   };
@@ -587,7 +587,7 @@ function BrowserCastCellControlsManager(browsercast) {
   };
 
   return self;
-};
+}
 
 function BrowserCast() {
   var self = {};
@@ -1062,7 +1062,7 @@ function BrowserCast() {
   };
 
   return self;
-};
+}
 
 
 (function(retryCount) {
