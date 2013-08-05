@@ -656,9 +656,11 @@ function BrowserCast() {
   };
 
   self.setup = function() {
+    self.setLoadStatus("Initializing…");
     self.injectHTML();
     self.setupCellControlsManager();
     self.setupEvents();
+    self.setLoadStatus("BrowserCast loaded!");
   };
 
   self.injectHTML = function() {
@@ -670,7 +672,7 @@ function BrowserCast() {
         "</div>" +
         "<div class='audio-container'>" +
           "<span class='state state-empty'>No audio loaded&hellip;</span>" +
-          "<span class='state state-loading'>Loading&hellip;</span>" +
+          "<span class='state state-loading'>Loading audio&hellip;</span>" +
           "<span class='state state-error'>Error loading audio.</span>" +
         "</div>" +
         "<div class='log'></div>" +
@@ -745,6 +747,28 @@ function BrowserCast() {
       };
       return true;
     });
+  };
+
+  self.setLoadStatus = function(val) {
+    self._loadStatus = val;
+    self._showLoadStatus();
+  };
+
+  self._showLoadStatus = function() {
+    if (self._loadStatusRetry) {
+      clearTimeout(self._loadStatusRetry);
+    }
+
+    if (!(self.loadStatusElem && self.loadStatusElem.length)) {
+      self.loadStatusElem = $(".bc-loading-status-output");
+      if (!self.loadStatusElem.length) {
+        self._loadStatusRetry = setTimeout(self._showLoadStatus, 100);
+        return;
+      }
+    }
+
+    self._loadStatusRetry = null;
+    self.loadStatusElem.text(self._loadStatus);
   };
 
   self.initializeMode = function() {

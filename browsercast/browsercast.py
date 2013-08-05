@@ -43,7 +43,11 @@ class Browsercast(object):
             raise AssertionError("Unknown asset format: %r" %(asset_name, ))
 
     def _repr_html_(self):
-        return "\n".join(self.asset_tag(n) for n in self.asset_order)
+        result = [
+            "<p class='bc-loading-status-output'>Loading BrowserCast&hellip;</p>"
+        ]
+        result.extend(self.asset_tag(n) for n in self.asset_order)
+        return "\n".join(result)
 
 
 def load(**kwargs):
