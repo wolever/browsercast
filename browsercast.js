@@ -1084,6 +1084,13 @@ function BrowserCast() {
     return;
   }
 
+  if (!window.IPython.Notebook) {
+    alert("BrowserCast needs to be run from an IPython notebook... We're in " +
+          "IPython right now, but not viewing a notebook. Open a notebook " +
+          "and try again.");
+    return;
+  }
+
   var loadStart = +new Date();
   function setupBrowsercast() {
     if ((new Date()) > loadStart + 3000) {
