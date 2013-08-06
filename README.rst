@@ -13,7 +13,7 @@ Traditional screencasts talking about BrowserCast:
 * Creating a presentation with BrowserCast: http://youtu.be/UhHRuPPFWtE
 * Old proof-of-concept demonstration: http://youtu.be/CYxZq4rZw0c
 
-Useage
+Usage
 ------
 
 As a Python package
