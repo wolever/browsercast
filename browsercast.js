@@ -104,7 +104,6 @@ BrowserCastCellOptions.getForCell = function(browsercast, cell) {
   return cell._browsercastOptions;
 };
 
-
 function BaseBrowserCastMode() {
   var self = {};
   self.bindBrowsercastEvents = {};
@@ -165,7 +164,7 @@ function BrowserCastEditing() {
   self.bindBrowsercastEvents = {
     "lazyAudioProgress": "onLazyAudioProgress",
     "cellTimingInputChange": "recalculateTimings",
-    "audioPaused": "onAudioPaused",
+    "audioPlayPauseEditMode": "onAudioPaused",
     "activeCellsChanged": "onActiveCellsChanged"
   };
 
@@ -376,7 +375,7 @@ function BrowserCastPopcornPlugin(browsercast) {
   // Popcorn plugin stuff
   self._setup = function(options){
     log("_setup", options.cellIndex);
-    self.toggleCellClass(options.cellDom, "hidden");
+    self.toggleCellClass(options.cellDom, "inactive");
     self.browsercast.updateActiveCells();
   };
 
@@ -408,7 +407,8 @@ function BrowserCastPlayback() {
   var self = BaseBrowserCastMode();
 
   self.bindBrowsercastEvents = {
-    "activeCellsChanged": "onActiveCellsChanged"
+    "activeCellsChanged": "onActiveCellsChanged",
+    "audioPlayPausePlaybackMode": "onAudioPlayPause"
   };
 
   self._activate = function(browsercast) {
@@ -453,6 +453,26 @@ function BrowserCastPlayback() {
     nb.stop(true).animate({
       scrollTop: nb.scrollTop() + activeCells[0].cellDom.position().top
     });
+  }
+
+  self.onAudioPlayPause = function(event) {
+    var audio = self.browsercast.audio;
+    var playing = audio && !audio.paused();
+    var nextCellIndex = IPython.notebook.get_selected_index() + 1;
+    var unplayedCells = IPython.notebook.get_cells().slice(nextCellIndex);
+    if (playing) {
+      unplayedCells.forEach(function(cell, index) {
+        var cellOpts = BrowserCastCellOptions.getForCell(browsercast, cell);
+        toggleClassPrefix(cellOpts.cellDom, "browsercast-cell-",
+          "browsercast-cell-hidden");
+      });
+    } else {
+      unplayedCells.forEach(function(cell, index) {
+        var cellOpts = BrowserCastCellOptions.getForCell(browsercast, cell);
+        toggleClassPrefix(cellOpts.cellDom, "browsercast-cell-",
+          "browsercast-cell-inactive");
+      });
+    }
   }
 
   self.deactivatePopcorn = function() {
@@ -685,7 +705,7 @@ function BrowserCast() {
       }
     });
     self.audioContainer = self.view.find(".audio-container");
-    self.audioContainer.attr("id", "browsercast-audio-container")
+    self.audioContainer.attr("id", "browsercast-audio-container");
     self.setAudioURL();
     self.log = self.view.find(".log");
   };
@@ -718,7 +738,7 @@ function BrowserCast() {
         cell._browsercastDidTriggerNew = true;
         self.events.trigger("cellAdded", [cell]);
       }
-      // DW: well... This is where the 'cellSeleted' event could go if we
+      // DW: well... This is where the 'cellDeleted' event could go if we
       // needed it...
       //self.events.trigger("cellSelected", [cell]);
     });
@@ -726,7 +746,7 @@ function BrowserCast() {
     self.events.on("cellTimingInputChange", debounce(function() {
       IPython.notebook.save_notebook();
     }, 250));
-    self.events.on("audioPaused", self.updateLazyAudioProgress);
+    self.events.on("audioPlayPauseEditMode", self.updateLazyAudioProgress);
 
     // Browser keyboard shortcuts
     $(document).keydown(function (event) {
@@ -1015,7 +1035,8 @@ function BrowserCast() {
     if (paused === self._lastAudioPaused)
       return;
     self._lastAudioPaused = paused;
-    self.events.trigger("audioPaused", [paused]);
+    self.events.trigger("audioPlayPauseEditMode", [paused]);
+    self.events.trigger("audioPlayPausePlaybackMode");
   };
 
   self._lazyAudioProgressInterval = null;
