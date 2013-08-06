@@ -1,6 +1,6 @@
-all: browsercast.css
+all: browsercast/browsercast.css
 
-browsercast.css: browsercast.less
+browsercast/browsercast.css: browsercast/browsercast.less
 	lessc $^ $@
 
 serve:

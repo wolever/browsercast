@@ -164,7 +164,7 @@ function BrowserCastEditing() {
   self.bindBrowsercastEvents = {
     "lazyAudioProgress": "onLazyAudioProgress",
     "cellTimingInputChange": "recalculateTimings",
-    "audioPlayPauseEditMode": "onAudioPaused",
+    "audioPlayPause": "onAudioPlayPause",
     "activeCellsChanged": "onActiveCellsChanged"
   };
 
@@ -191,7 +191,7 @@ function BrowserCastEditing() {
     self.browsercast.audioContainer.after(self.pickAudioBtn);
 
     self.browsercast.updateActiveCells();
-    self.onAudioPaused(null);
+    self.onAudioPlayPause(null);
   };
 
   self._deactivate = function() {
@@ -203,7 +203,7 @@ function BrowserCastEditing() {
     self.recalculateTimings();
   };
 
-  self.onAudioPaused = function(event) {
+  self.onAudioPlayPause = function(event) {
     var audio = self.browsercast.audio;
     var paused = audio && audio.paused();
     var pauseIcon = $(".pause-icon");
@@ -379,7 +379,7 @@ function BrowserCastPopcornPlugin(browsercast) {
     self.browsercast.updateActiveCells();
   };
 
-  self._teardown = function() {
+  self._teardown = function(options) {
     log("_teardown", options.cellIndex);
     self.browsercast.updateActiveCells();
   };
@@ -408,7 +408,7 @@ function BrowserCastPlayback() {
 
   self.bindBrowsercastEvents = {
     "activeCellsChanged": "onActiveCellsChanged",
-    "audioPlayPausePlaybackMode": "onAudioPlayPause"
+    "audioPlayPause": "onAudioPlayPause"
   };
 
   self._activate = function(browsercast) {
@@ -455,24 +455,19 @@ function BrowserCastPlayback() {
     });
   }
 
-  self.onAudioPlayPause = function(event) {
-    var audio = self.browsercast.audio;
-    var playing = audio && !audio.paused();
-    var nextCellIndex = IPython.notebook.get_selected_index() + 1;
-    var unplayedCells = IPython.notebook.get_cells().slice(nextCellIndex);
-    if (playing) {
-      unplayedCells.forEach(function(cell, index) {
-        var cellOpts = BrowserCastCellOptions.getForCell(browsercast, cell);
-        toggleClassPrefix(cellOpts.cellDom, "browsercast-cell-",
-          "browsercast-cell-hidden");
-      });
-    } else {
-      unplayedCells.forEach(function(cell, index) {
-        var cellOpts = BrowserCastCellOptions.getForCell(browsercast, cell);
-        toggleClassPrefix(cellOpts.cellDom, "browsercast-cell-",
-          "browsercast-cell-inactive");
-      });
-    }
+  self.onAudioPlayPause = function(event, playing) {
+    var cells = IPython.notebook.get_cells();
+    var activeCells = self.browsercast.getActiveCells();
+    var activeCell = activeCells[activeCells.length - 1];
+    var nextCellIndex = cells.indexOf((activeCell || {}).cell) + 1;
+    if (nextCellIndex <= 0)
+      return;
+    var unplayedCells = cells.slice(nextCellIndex);
+    var newClass = "browsercast-cell-" + (playing? "hidden" : "inactive");
+    unplayedCells.forEach(function(cell, index) {
+      var cellOpts = BrowserCastCellOptions.getForCell(browsercast, cell);
+      toggleClassPrefix(cellOpts.cellDom, "browsercast-cell-", newClass);
+    });
   }
 
   self.deactivatePopcorn = function() {
@@ -515,11 +510,17 @@ function BrowserCastCellControlsManager(browsercast) {
     cellOpts.durationInput = cellOpts.controls.find(".browsercast-duration-input");
     var elem = $(cell.element);
     elem.prepend(cellOpts.controls);
+    /* Note: it's turning out to be fairly fiddly to calculate the correct
+     * size for the controls... So just hard code that for now. Sorry :(
     var controlsWidth = cellOpts.controls.children().width();
+    var controlsHeight = cellOpts.controls.children().height();
+    */
+    var controlsWidth = 160;
+    var controlsHeight = 53;
     var elemPaddingLeft = 5;
     elem.css({
       "padding-left": (controlsWidth + elemPaddingLeft) + "px",
-      "min-height": cellOpts.controls.children().height() + 10 + "px"
+      "min-height":  + controlsHeight + 10 + "px"
     });
     cellOpts.controls.css({
       "margin-left": -controlsWidth + "px",
@@ -607,7 +608,7 @@ function BrowserCastCellControlsManager(browsercast) {
   };
 
   return self;
-};
+}
 
 function BrowserCast() {
   var self = {};
@@ -670,9 +671,11 @@ function BrowserCast() {
   };
 
   self.setup = function() {
+    self.setLoadStatus("Initializing…");
     self.injectHTML();
     self.setupCellControlsManager();
     self.setupEvents();
+    self.setLoadStatus("BrowserCast loaded!");
   };
 
   self.injectHTML = function() {
@@ -684,7 +687,7 @@ function BrowserCast() {
         "</div>" +
         "<div class='audio-container'>" +
           "<span class='state state-empty'>No audio loaded&hellip;</span>" +
-          "<span class='state state-loading'>Loading&hellip;</span>" +
+          "<span class='state state-loading'>Loading audio&hellip;</span>" +
           "<span class='state state-error'>Error loading audio.</span>" +
         "</div>" +
         "<div class='log'></div>" +
@@ -759,6 +762,28 @@ function BrowserCast() {
       };
       return true;
     });
+  };
+
+  self.setLoadStatus = function(val) {
+    self._loadStatus = val;
+    self._showLoadStatus();
+  };
+
+  self._showLoadStatus = function() {
+    if (self._loadStatusRetry) {
+      clearTimeout(self._loadStatusRetry);
+    }
+
+    if (!(self.loadStatusElem && self.loadStatusElem.length)) {
+      self.loadStatusElem = $(".bc-loading-status-output");
+      if (!self.loadStatusElem.length) {
+        self._loadStatusRetry = setTimeout(self._showLoadStatus, 100);
+        return;
+      }
+    }
+
+    self._loadStatusRetry = null;
+    self.loadStatusElem.text(self._loadStatus);
   };
 
   self.initializeMode = function() {
@@ -1005,8 +1030,7 @@ function BrowserCast() {
     if (paused === self._lastAudioPaused)
       return;
     self._lastAudioPaused = paused;
-    self.events.trigger("audioPlayPauseEditMode", [paused]);
-    self.events.trigger("audioPlayPausePlaybackMode");
+    self.events.trigger("audioPlayPause", [!paused]);
   };
 
   self._lazyAudioProgressInterval = null;
@@ -1083,7 +1107,7 @@ function BrowserCast() {
   };
 
   return self;
-};
+}
 
 
 (function(retryCount) {
@@ -1096,6 +1120,13 @@ function BrowserCast() {
     alert("BrowserCast needs to be run from an IPython notebook... But it " +
           "doesn't look like we're inside a notebook right now. " +
           "Open an IPython notebook and try again.");
+    return;
+  }
+
+  if (!window.IPython.Notebook) {
+    alert("BrowserCast needs to be run from an IPython notebook... We're in " +
+          "IPython right now, but not viewing a notebook. Open a notebook " +
+          "and try again.");
     return;
   }
 
