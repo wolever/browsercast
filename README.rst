@@ -14,13 +14,13 @@ Traditional screencasts talking about BrowserCast:
 * Old proof-of-concept demonstration: http://youtu.be/CYxZq4rZw0c
 
 Usage
-------
+-----
 
 As a Python package
 ...................
 
 When loaded as a Python package, BrowserCast will be packaged along with the
-notebook and will be useable by anyone who loads the notebook.
+notebook and will be usable by anyone who loads the notebook.
 
 To load BrowserCast from a Python package:
 
@@ -37,9 +37,9 @@ To load BrowserCast from a Python package:
 As a bookmarklet
 ................
 
-When loaded as a bookmarklet, BrowserCast will only be useable for the session
+When loaded as a bookmarklet, BrowserCast will only be usable for the session
 it was loaded from (although the BrowserCast metadata will be saved to the
-notebook, so the cell timings will still be useable in future sessions):
+notebook, so the cell timings will still be usable in future sessions):
 
 1. Install the bookmarklet from: http://wolever.github.io/browsercast/
 2. Open an IPython notebook (hint: ``ipython notebook``, then "New Notebook")
