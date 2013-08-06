@@ -4,7 +4,7 @@ from urllib import quote
 
 import traceback
 
-class Browsercast(object):
+class BrowserCast(object):
     default_assets = {
         "browsercast_js": "browsercast.js",
         "browsercast_css": "browsercast.css",
@@ -45,18 +45,42 @@ class Browsercast(object):
         else:
             raise AssertionError("Unknown asset format: %r" %(asset_name, ))
 
+    def get_html(self):
+        result = [
+            "<p class='bc-loading-status-output'>Loading BrowserCast&hellip;</p>"
+        ]
+        result.extend(self.asset_tag(n) for n in self.asset_order)
+        return "\n".join(result)
+
     def _repr_html_(self):
         try:
-            result = [
-                "<p class='bc-loading-status-output'>Loading BrowserCast&hellip;</p>"
-            ]
-            result.extend(self.asset_tag(n) for n in self.asset_order)
-            return "\n".join(result)
+            return self.get_html()
         except Exception as e:
             return "\n".join([
                 "<div><strong>Error loading BrowserCast</strong>: %s</div>" %(e, ),
                 "<pre>%s</pre>" %(cgi.escape(traceback.format_exc()), )
             ])
 
-def load(**kwargs):
-    return Browsercast(**kwargs)
+def load(**assets):
+    """ Loads BrowserCast into a notebook.
+
+    By default all required JavaScript and CSS assets are embedded into the
+    response, but this can be overridden by providing asset URLs. For example,
+    during development, this will embed script and CSS links::
+
+        import browsercast
+        browsercast.load(browsercast_js="url:files/browsercast/browsercast.js",
+                         browsercast_css="url:files/browsercast/browsercast.css")
+
+    This will yield (essentially)::
+
+        <link rel="stylesheet" src="files/browsercast/browsercast.css" />
+        <script src="files/browsercast/browsercast.js"></script>
+
+    Alternatively, if a file path is provided, that file will be embedded:
+
+        import browsercast
+        browsercast.load(browsercast_js="/path/to/alternative/file.js")
+    """
+
+    return BrowserCast(**assets)
