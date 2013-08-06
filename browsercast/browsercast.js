@@ -164,7 +164,7 @@ function BrowserCastEditing() {
   self.bindBrowsercastEvents = {
     "lazyAudioProgress": "onLazyAudioProgress",
     "cellTimingInputChange": "recalculateTimings",
-    "audioPlayPauseEditMode": "onAudioPaused",
+    "audioPlayPause": "onAudioPlayPause",
     "activeCellsChanged": "onActiveCellsChanged"
   };
 
@@ -191,7 +191,7 @@ function BrowserCastEditing() {
     self.browsercast.audioContainer.after(self.pickAudioBtn);
 
     self.browsercast.updateActiveCells();
-    self.onAudioPaused(null);
+    self.onAudioPlayPause(null);
   };
 
   self._deactivate = function() {
@@ -203,7 +203,7 @@ function BrowserCastEditing() {
     self.recalculateTimings();
   };
 
-  self.onAudioPaused = function(event) {
+  self.onAudioPlayPause = function(event) {
     var audio = self.browsercast.audio;
     var paused = audio && audio.paused();
     var pauseIcon = $(".pause-icon");
@@ -408,7 +408,7 @@ function BrowserCastPlayback() {
 
   self.bindBrowsercastEvents = {
     "activeCellsChanged": "onActiveCellsChanged",
-    "audioPlayPausePlaybackMode": "onAudioPlayPause"
+    "audioPlayPause": "onAudioPlayPause"
   };
 
   self._activate = function(browsercast) {
@@ -455,24 +455,19 @@ function BrowserCastPlayback() {
     });
   }
 
-  self.onAudioPlayPause = function(event) {
-    var audio = self.browsercast.audio;
-    var playing = audio && !audio.paused();
-    var nextCellIndex = IPython.notebook.get_selected_index() + 1;
-    var unplayedCells = IPython.notebook.get_cells().slice(nextCellIndex);
-    if (playing) {
-      unplayedCells.forEach(function(cell, index) {
-        var cellOpts = BrowserCastCellOptions.getForCell(browsercast, cell);
-        toggleClassPrefix(cellOpts.cellDom, "browsercast-cell-",
-          "browsercast-cell-hidden");
-      });
-    } else {
-      unplayedCells.forEach(function(cell, index) {
-        var cellOpts = BrowserCastCellOptions.getForCell(browsercast, cell);
-        toggleClassPrefix(cellOpts.cellDom, "browsercast-cell-",
-          "browsercast-cell-inactive");
-      });
-    }
+  self.onAudioPlayPause = function(event, playing) {
+    var cells = IPython.notebook.get_cells();
+    var activeCells = self.browsercast.getActiveCells();
+    var activeCell = activeCells[activeCells.length - 1];
+    var nextCellIndex = cells.indexOf((activeCell || {}).cell) + 1;
+    if (nextCellIndex <= 0)
+      return;
+    var unplayedCells = cells.slice(nextCellIndex);
+    var newClass = "browsercast-cell-" + (playing? "hidden" : "inactive");
+    unplayedCells.forEach(function(cell, index) {
+      var cellOpts = BrowserCastCellOptions.getForCell(browsercast, cell);
+      toggleClassPrefix(cellOpts.cellDom, "browsercast-cell-", newClass);
+    });
   }
 
   self.deactivatePopcorn = function() {
@@ -1035,8 +1030,7 @@ function BrowserCast() {
     if (paused === self._lastAudioPaused)
       return;
     self._lastAudioPaused = paused;
-    self.events.trigger("audioPlayPauseEditMode", [paused]);
-    self.events.trigger("audioPlayPausePlaybackMode");
+    self.events.trigger("audioPlayPause", [!paused]);
   };
 
   self._lazyAudioProgressInterval = null;
