@@ -407,7 +407,8 @@ function BrowserCastPlayback() {
   var self = BaseBrowserCastMode();
 
   self.bindBrowsercastEvents = {
-    "activeCellsChanged": "onActiveCellsChanged"
+    "activeCellsChanged": "onActiveCellsChanged",
+    "audioPlayPausePlaybackMode": "onAudioPlayPause"
   };
 
   self._activate = function(browsercast) {
@@ -452,6 +453,26 @@ function BrowserCastPlayback() {
     nb.stop(true).animate({
       scrollTop: nb.scrollTop() + activeCells[0].cellDom.position().top
     });
+  }
+
+  self.onAudioPlayPause = function(event) {
+    var audio = self.browsercast.audio;
+    var playing = audio && !audio.paused();
+    var nextCellIndex = IPython.notebook.get_selected_index() + 1;
+    var unplayedCells = IPython.notebook.get_cells().slice(nextCellIndex);
+    if (playing) {
+      unplayedCells.forEach(function(cell, index) {
+        var cellOpts = BrowserCastCellOptions.getForCell(browsercast, cell);
+        toggleClassPrefix(cellOpts.cellDom, "browsercast-cell-",
+          "browsercast-cell-hidden");
+      });
+    } else {
+      unplayedCells.forEach(function(cell, index) {
+        var cellOpts = BrowserCastCellOptions.getForCell(browsercast, cell);
+        toggleClassPrefix(cellOpts.cellDom, "browsercast-cell-",
+          "browsercast-cell-inactive");
+      });
+    }
   }
 
   self.deactivatePopcorn = function() {
@@ -1015,6 +1036,7 @@ function BrowserCast() {
       return;
     self._lastAudioPaused = paused;
     self.events.trigger("audioPlayPauseEditMode", [paused]);
+    self.events.trigger("audioPlayPausePlaybackMode");
   };
 
   self._lazyAudioProgressInterval = null;
