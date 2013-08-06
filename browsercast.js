@@ -709,7 +709,7 @@ function BrowserCast() {
         cell._browsercastDidTriggerNew = true;
         self.events.trigger("cellAdded", [cell]);
       }
-      // DW: well... This is where the 'cellSeleted' event could go if we
+      // DW: well... This is where the 'cellDeleted' event could go if we
       // needed it...
       //self.events.trigger("cellSelected", [cell]);
     });
