@@ -104,7 +104,6 @@ BrowserCastCellOptions.getForCell = function(browsercast, cell) {
   return cell._browsercastOptions;
 };
 
-
 function BaseBrowserCastMode() {
   var self = {};
   self.bindBrowsercastEvents = {};
@@ -165,7 +164,7 @@ function BrowserCastEditing() {
   self.bindBrowsercastEvents = {
     "lazyAudioProgress": "onLazyAudioProgress",
     "cellTimingInputChange": "recalculateTimings",
-    "audioPaused": "onAudioPaused",
+    "audioPlayPauseEditMode": "onAudioPaused",
     "activeCellsChanged": "onActiveCellsChanged"
   };
 
@@ -726,7 +725,7 @@ function BrowserCast() {
     self.events.on("cellTimingInputChange", debounce(function() {
       IPython.notebook.save_notebook();
     }, 250));
-    self.events.on("audioPaused", self.updateLazyAudioProgress);
+    self.events.on("audioPlayPauseEditMode", self.updateLazyAudioProgress);
 
     // Browser keyboard shortcuts
     $(document).keydown(function (event) {
@@ -1015,7 +1014,7 @@ function BrowserCast() {
     if (paused === self._lastAudioPaused)
       return;
     self._lastAudioPaused = paused;
-    self.events.trigger("audioPaused", [paused]);
+    self.events.trigger("audioPlayPauseEditMode", [paused]);
   };
 
   self._lazyAudioProgressInterval = null;
