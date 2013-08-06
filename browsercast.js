@@ -676,7 +676,7 @@ function BrowserCast() {
       }
     });
     self.audioContainer = self.view.find(".audio-container");
-    self.audioContainer.attr("id", "browsercast-audio-container")
+    self.audioContainer.attr("id", "browsercast-audio-container");
     self.setAudioURL();
     self.log = self.view.find(".log");
   };
