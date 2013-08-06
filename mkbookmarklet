@@ -5,7 +5,10 @@ import sys
 import os
 
 if len(sys.argv) == 1:
-    sys.argv.append("files/")
+    sys.stderr.write("NOTICE: No prefix provided; using 'files/browsercast/\n")
+    sys.stderr.write("NOTICE: This bookmarklet will work when running "
+                     "'ipython notebook' from this directory.\n")
+    sys.argv.append("files/browsercast/")
 
 PREFIX = sys.argv[1]
 

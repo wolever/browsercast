@@ -1,11 +1,14 @@
 import os
+import cgi
 from urllib import quote
+
+import traceback
 
 class Browsercast(object):
     default_assets = {
-        "browsercast_js": "../browsercast.js",
-        "browsercast_css": "../browsercast.css",
-        "popcorn_js": "../popcorn-complete-1.3.min.js",
+        "browsercast_js": "browsercast.js",
+        "browsercast_css": "browsercast.css",
+        "popcorn_js": "popcorn-complete-1.3.min.js",
     }
     asset_order = [
         "popcorn_js",
@@ -43,12 +46,17 @@ class Browsercast(object):
             raise AssertionError("Unknown asset format: %r" %(asset_name, ))
 
     def _repr_html_(self):
-        result = [
-            "<p class='bc-loading-status-output'>Loading BrowserCast&hellip;</p>"
-        ]
-        result.extend(self.asset_tag(n) for n in self.asset_order)
-        return "\n".join(result)
-
+        try:
+            result = [
+                "<p class='bc-loading-status-output'>Loading BrowserCast&hellip;</p>"
+            ]
+            result.extend(self.asset_tag(n) for n in self.asset_order)
+            return "\n".join(result)
+        except Exception as e:
+            return "\n".join([
+                "<div><strong>Error loading BrowserCast</strong>: %s</div>" %(e, ),
+                "<pre>%s</pre>" %(cgi.escape(traceback.format_exc()), )
+            ])
 
 def load(**kwargs):
     return Browsercast(**kwargs)
